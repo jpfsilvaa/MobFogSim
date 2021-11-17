@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -15,6 +16,7 @@ import org.fog.entities.*;
 import org.fog.localization.Coordinate;
 import org.fog.localization.DiscoverLocalization;
 import org.fog.localization.Distances;
+import org.fog.optimization.Allocation;
 import org.fog.vmmobile.AppExample;
 import org.fog.vmmobile.constants.*;
 
@@ -32,7 +34,11 @@ public class Migration {
 	private static List<ApDevice> apsAvailable;
 	private static List<FogDevice> serverCloudletsAvailable;
 	private static int policyReplicaVM;
-
+	
+	private static String TAG = "-------JOAO " + Migration.class.getName();
+	static final HashMap<MobileDevice, List<FogDevice>> devicesWaitList = new HashMap<>();
+	static Allocation allocator = new Allocation();
+	
 	/**
 	 * @param args
 	 * @author Marcio Moraes Lopes
@@ -41,6 +47,7 @@ public class Migration {
 	public static List<ApDevice> apAvailableList(List<ApDevice> oldApList
 		, MobileDevice smartThing) {// It looks to cone and return the Aps
 									// available list
+		System.out.printf("%s: apAvailableList%n", TAG);
 		List<ApDevice> newApList = new ArrayList<>();
 		for (ApDevice ap : oldApList) {
 			if (!smartThing.getSourceAp().equals(ap))
@@ -52,6 +59,7 @@ public class Migration {
 	// Policy: the closest Ap
 	public static int nextAp(List<ApDevice> apDevices, MobileDevice smartThing) {
 		// It return apDevice list without the smartThing's sourceAp
+		System.out.printf("%s: nextAp%n", TAG);
 		setApsAvailable(apAvailableList(apDevices, smartThing));
 		if (getApsAvailable().size() == 0) {
 			return -1;
@@ -61,11 +69,12 @@ public class Migration {
 	}
 
 	public int nextApFromCloudlet(Set<ApDevice> apDevices, MobileDevice smartThing) {
-
+		System.out.printf("%s: nextApFromCloudlet%n", TAG);
 		return 0;
 	}
 
 	public static boolean insideCone(int smartThingDirection, int zoneDirection) {//
+		System.out.printf("%s: insideCone", TAG);
 		int ajust1, ajust2;
 
 		if (smartThingDirection == Directions.EAST) {
@@ -96,6 +105,7 @@ public class Migration {
 	private static void saveDistance(int travelTimeId, Coordinate coord_atual,
 		Coordinate coord_prev, Coordinate coord_erro, Double dist_atual_prev,
 		Double dist_atual_erro, Double dist_prev_erro, int velocidade, String filename) {
+		System.out.printf("%s: saveDistance%n", TAG);
 
 		try (FileWriter fw1 = new FileWriter(filename, true);
 			BufferedWriter bw1 = new BufferedWriter(fw1);
@@ -117,7 +127,9 @@ public class Migration {
 
 	public static List<FogDevice> serverClouletsAvailableList(List<FogDevice> oldServerCloudlets,
 		MobileDevice smartThing) {
-
+	
+		System.out.printf("%s: serverCloudletsAvailableList%n", TAG);
+		
 		Coordinate coord_real = smartThing.getCoord();
 
 		ArrayList<String[]> path = smartThing.getPath();
@@ -166,18 +178,54 @@ public class Migration {
 		return newServerCloudlets;
 	}
 
-	public static int nextServerCloudlet(List<FogDevice> serverCloudlets, MobileDevice smartThing) {
-		// Policy: the closest serverCloudlet
-		setServerCloudletsAvailable(serverClouletsAvailableList(serverCloudlets, smartThing));
-		if (getServerCloudletsAvailable().size() == 0) {
-			return -1;
+	/**
+	 * @author jps
+	 * 
+	 * @param devices waiting to be allocated
+	 * @return a merged list of cloudlets available for all devices in the hashmap
+	 */
+	private static List<FogDevice> mergeAvailableCloudlets(HashMap<MobileDevice, List<FogDevice>> devices){
+		System.out.printf("%s: mergeAvailableCloudlets%n", TAG);
+		List<FogDevice> totalCloudlets = new ArrayList<>();
+		
+		for (MobileDevice md : devices.keySet()) {
+			totalCloudlets.addAll(serverClouletsAvailableList(devices.get(md), md));
 		}
-		else {
-			return Distances.theClosestServerCloudlet(getServerCloudletsAvailable(), smartThing);
+		
+		return totalCloudlets;
+	}
+	
+	public static int nextServerCloudlet(List<FogDevice> serverCloudlets, MobileDevice smartThing) {
+		System.out.printf("%s: nextServerCloudlet%n", TAG);
+		// Policy: the closest serverCloudlet
+		
+		// Accumulate requisitions. When it gets REQUEST_LIMITS, then the method for calculating will be called.
+		int REQUESTS_LIMIT = 1;
+		if (devicesWaitList.size() < REQUESTS_LIMIT) {
+			System.out.printf("%s: added to the list - size: %d %n", TAG, devicesWaitList.size());
+			devicesWaitList.put(smartThing, serverCloudlets);
+			
+			return -1;
+		} else {
+			System.out.printf("%s: filled list%n", TAG);
+			
+			List<FogDevice> allAvailableCloudlets = mergeAvailableCloudlets(devicesWaitList);
+			setServerCloudletsAvailable(allAvailableCloudlets);
+			if (getServerCloudletsAvailable().size() == 0) {
+				return -1;
+			}
+			else {
+				// TODO: PROBLEMA FUTURO-> tenho que retornar alocação pra cada usuário que entrou na lista. Aqui retorno pra 1 só.
+				List<MobileDevice> reqSmartThings = new ArrayList<> (devicesWaitList.keySet());
+				devicesWaitList.clear();
+				return allocator.calculateAllocations(allAvailableCloudlets, 
+						reqSmartThings);
+			}			
 		}
 	}
 
 	public static boolean isEdgeAp(ApDevice apDevice, MobileDevice smartThing) {
+		System.out.printf("%s: isEdgeAp%n", TAG);
 		if (apDevice.getServerCloudlet().getMyId() == smartThing.getSourceServerCloudlet()
 			.getMyId())// verify if the next Ap is edge
 			return false;
@@ -187,6 +235,7 @@ public class Migration {
 
 	public static int lowestLatencyCostServerCloudlet(List<FogDevice> oldServerCloudlets,
 		List<ApDevice> oldApDevices, MobileDevice smartThing) {
+		System.out.printf("%s: lowestLatencyCostServerCloudlet%n", TAG);
 		List<FogDevice> newServerCloudlets = new ArrayList<>();
 		List<FogDevice> numServerCloudlets = new ArrayList<>();
 		List<Double> costList = new ArrayList<>();
@@ -266,6 +315,7 @@ public class Migration {
 
 	public static void lowestLatencyCostServerCloudletILP(List<FogDevice> oldServerCloudlets,
 		List<ApDevice> oldApDevices, MobileDevice smartThing) {
+		System.out.printf("%s: lowestLatencyCostServerCloudletILP%n", TAG);
 		List<FogDevice> clusterOfCloudlets = new ArrayList<>();
 		List<Double> costList = new ArrayList<>();
 
@@ -284,6 +334,7 @@ public class Migration {
 
 	public static double sumCostFunction(FogDevice serverCloudlet, ApDevice nextAp,
 		MobileDevice smartThing) {
+		System.out.printf("%s: sumCostFunction%n", TAG);
 		double sum = -1;
 		if (nextAp.getServerCloudlet().equals(serverCloudlet)) {
 			sum = NetworkTopology.getDelay(smartThing.getId(), nextAp.getId())
@@ -305,6 +356,7 @@ public class Migration {
 
 	private static List<List<Double>> getLatencyMatrix(Coordinate futureCoord) {
 		// TODO Auto-generated method stub
+		System.out.printf("%s: getLatencyMatrix%n", TAG);
 		return null;
 	}
 
@@ -321,98 +373,122 @@ public class Migration {
 	}
 
 	public static boolean isMigrationPoint() {
+		System.out.printf("%s: isMigrationPoint%n", TAG);
 		return migrationPoint;
 	}
 
 	public static void setMigrationPoint(boolean migrationPoint) {
+		System.out.printf("%s: setMigrationPoint%n", TAG);
 		Migration.migrationPoint = migrationPoint;
 	}
 
 	public static boolean isMigrationZone() {
+		System.out.printf("%s: isMigrationZone%n", TAG);
 		return migrationZone;
 	}
 
 	public static void setMigrationZone(boolean migrationZone) {
+		System.out.printf("%s: setMigrationZone%n", TAG);
 		Migration.migrationZone = migrationZone;
 	}
 
 	public int getLocation() {
+		System.out.printf("%s: getLocation%n", TAG);
 		return location;
 	}
 
 	public void setLocation(int location) {
+		System.out.printf("%s: setLocation%n", TAG);
 		this.location = location;
 	}
 
 	public ApDevice getCorrentAP() {
+		System.out.printf("%s: getCurrentAP%n", TAG);
 		return correntAP;
 	}
 
 	public void setCorrentAP(ApDevice correntAP) {
+		System.out.printf("%s: setCurrentAP%n", TAG);
 		this.correntAP = correntAP;
 	}
 
 	public FogDevice getCorrentServerCloudlet() {
+		System.out.printf("%s: getCurrentServerCloudlet%n", TAG);
 		return correntServerCloudlet;
 	}
 
 	public void setCorrentServerCloudlet(FogDevice correntServerCloudlet) {
+		System.out.printf("%s: setCurrentServerCloudlet%n", TAG);
 		this.correntServerCloudlet = correntServerCloudlet;
 	}
 
 	public MobileDevice getCorrentSmartThing() {
+		System.out.printf("%s: getCurrentSmartThing%n", TAG);
 		return correntSmartThing;
 	}
 
 	public void setCorrentSmartThing(MobileDevice correntSmartThing) {
+		System.out.printf("%s: setCurrentSmartThing%n", TAG);
 		this.correntSmartThing = correntSmartThing;
 	}
 
 	public ApDevice getApAvailable() {
+		System.out.printf("%s: getApAvailable%n", TAG);
 		return apAvailable;
 	}
 
 	public void setApAvailable(ApDevice apAvailable) {
+		System.out.printf("%s: setApAvailable%n", TAG);
 		this.apAvailable = apAvailable;
 	}
 
 	public FogDevice getServerCloudletAvailable() {
+		System.out.printf("%s: getServerCloudletAvailable%n", TAG);
 		return serverCloudletAvailable;
 	}
 
 	public void setServerCloudletAvailable(FogDevice serverCloudletAvailable) {
+		System.out.printf("%s: setSErverCloudletAvailable%n", TAG);
 		this.serverCloudletAvailable = serverCloudletAvailable;
 	}
 
 	public int getFlowDirection() {
+		System.out.printf("%s: getFlowDirection%n", TAG);
 		return flowDirection;
 	}
 
 	public void setFlowDirection(int flowDirection) {
+		System.out.printf("%s: setFlowDirection%n", TAG);
 		this.flowDirection = flowDirection;
 	}
 
 	public static List<ApDevice> getApsAvailable() {
+		System.out.printf("%s: getApsAvailable%n", TAG);
 		return apsAvailable;
 	}
 
 	public static void setApsAvailable(List<ApDevice> apsAvailable) {
+		System.out.printf("%s: setApsAvailable%n", TAG);
 		Migration.apsAvailable = apsAvailable;
 	}
 
 	public static List<FogDevice> getServerCloudletsAvailable() {
+		System.out.printf("%s: getSErverCloudletsAvailable%n", TAG);
 		return serverCloudletsAvailable;
 	}
 
 	public static void setServerCloudletsAvailable(List<FogDevice> serverCloudletsAvailable) {
+		System.out.printf("%s: setSErverCloudletsAvailable%n", TAG);
 		Migration.serverCloudletsAvailable = serverCloudletsAvailable;
 	}
 
 	public static int getPolicyReplicaVM() {
+		System.out.printf("%s: getPolicyReplicaVM%n", TAG);
 		return policyReplicaVM;
 	}
 
 	public static void setPolicyReplicaVM(int policyReplicaVM) {
+		System.out.printf("%s: setReplicaVM%n", TAG);
 		Migration.policyReplicaVM = policyReplicaVM;
 	}
 }
