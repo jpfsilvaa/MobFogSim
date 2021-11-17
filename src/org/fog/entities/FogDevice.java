@@ -53,6 +53,7 @@ import org.fog.vmmigration.CompleteVM;
 import org.fog.vmmigration.ContainerVM;
 import org.fog.vmmigration.DecisionMigration;
 import org.fog.vmmigration.LiveMigration;
+import org.fog.vmmigration.LowestLatency;
 import org.fog.vmmigration.MyStatistics;
 import org.fog.vmmigration.Service;
 import org.fog.vmmobile.LogMobile;
@@ -135,6 +136,8 @@ public class FogDevice extends PowerDatacenter {
 	protected int mobilityPrecitionError;
 
 	protected int myId;
+	
+	private static String TAG = "-------JOAO " + FogDevice.class.getName();
 
 	public int getMyId() {
 		return myId;
@@ -595,6 +598,7 @@ public class FogDevice extends PowerDatacenter {
 			manageResources(ev);
 			break;
 		case MobileEvents.MAKE_DECISION_MIGRATION:
+			System.out.printf("%s MAKE_DECISION_MIGRATION%n", TAG);
 			invokeDecisionMigration(ev);
 			break;
 		case MobileEvents.TO_MIGRATION:
@@ -987,6 +991,7 @@ public class FogDevice extends PowerDatacenter {
 	}
 
 	private void invokeDecisionMigration(SimEvent ev) {
+		System.out.printf("%s: invokeDecisionMigration%n", TAG);
 		for (MobileDevice st : getSmartThings()) {
 			//Only the connected smartThings
 			if (st.getSourceAp() != null && (!st.isLockedToMigration())) {

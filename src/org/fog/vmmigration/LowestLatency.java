@@ -20,10 +20,12 @@ public class LowestLatency implements DecisionMigration {
 	private int smartThingPosition;
 	private boolean migZone;
 	private boolean migPoint;
+	private static String TAG = "-------JOAO " + LowestLatency.class.getName();
 
 	public LowestLatency(List<FogDevice> serverCloudlets,
 		List<ApDevice> apDevices, int migPointPolicy, int policyReplicaVM) {
 		super();
+		System.out.printf("%s: creating object%n", TAG);
 		setServerCloudlets(serverCloudlets);
 		setApDevices(apDevices);
 		setMigPointPolicy(migPointPolicy);
@@ -32,6 +34,7 @@ public class LowestLatency implements DecisionMigration {
 
 	@Override
 	public boolean shouldMigrate(MobileDevice smartThing) {
+		System.out.printf("%s: shoudMigrate%n", TAG);
 		if (smartThing.getSpeed() == 0) {// smartThing is mobile
 			return false;// no migration
 		}
@@ -46,6 +49,7 @@ public class LowestLatency implements DecisionMigration {
 		}
 		else {
 			setNextServerClouletId(Migration.lowestLatencyCostServerCloudlet(serverCloudlets, apDevices, smartThing));
+			System.out.printf("%s: calling Migration method%n", TAG);
 			if (getNextServerClouletId() < 0) {
 				return false;
 			}

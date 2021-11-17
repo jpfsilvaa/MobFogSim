@@ -20,10 +20,12 @@ public class LowestDistBwSmartThingServerCloudlet implements DecisionMigration {
 	private boolean migZone;
 	private boolean migPoint;
 	private int policyReplicaVM;
+	private static String TAG = "-------JOAO " + LowestDistBwSmartThingServerCloudlet.class.getName();
 
 	public LowestDistBwSmartThingServerCloudlet(List<FogDevice> serverCloudlets,
 		List<ApDevice> apDevices, int migPointPolicy, int policyReplicaVM) {
 		super();
+		System.out.printf("%s: creating object%n", TAG);
 		setServerCloudlets(serverCloudlets);
 		setApDevices(apDevices);
 		setMigPointPolicy(migPointPolicy);
@@ -32,8 +34,7 @@ public class LowestDistBwSmartThingServerCloudlet implements DecisionMigration {
 
 	@Override
 	public boolean shouldMigrate(MobileDevice smartThing) {
-		// TODO Auto-generated method stub
-
+		System.out.printf("%s: shoudMigrate%n", TAG);
 		if (smartThing.getSpeed() == 0) {// smartThing is mobile
 			return false;// no migration
 		}
