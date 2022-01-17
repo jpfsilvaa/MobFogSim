@@ -17,6 +17,7 @@ import org.fog.localization.Coordinate;
 import org.fog.localization.DiscoverLocalization;
 import org.fog.localization.Distances;
 import org.fog.optimization.Allocation;
+import org.fog.optimization.facade.DeviceFacade;
 import org.fog.vmmobile.AppExample;
 import org.fog.vmmobile.constants.*;
 
@@ -36,8 +37,8 @@ public class Migration {
 	private static int policyReplicaVM;
 	
 	private static String TAG = "-------JOAO " + Migration.class.getName();
-	static final HashMap<MobileDevice, List<FogDevice>> devicesWaitList = new HashMap<>();
-	static Allocation allocator = new Allocation();
+//	static final HashMap<MobileDevice, List<FogDevice>> devicesWaitList = new HashMap<>();
+//	static Allocation allocator = new Allocation();
 	
 	/**
 	 * @param args
@@ -74,7 +75,7 @@ public class Migration {
 	}
 
 	public static boolean insideCone(int smartThingDirection, int zoneDirection) {//
-		System.out.printf("%s: insideCone", TAG);
+		System.out.printf("%s: insideCone%n", TAG);
 		int ajust1, ajust2;
 
 		if (smartThingDirection == Directions.EAST) {
@@ -177,51 +178,11 @@ public class Migration {
 		}
 		return newServerCloudlets;
 	}
-
-	/**
-	 * @author jps
-	 * 
-	 * @param devices waiting to be allocated
-	 * @return a merged list of cloudlets available for all devices in the hashmap
-	 */
-	private static List<FogDevice> mergeAvailableCloudlets(HashMap<MobileDevice, List<FogDevice>> devices){
-		System.out.printf("%s: mergeAvailableCloudlets%n", TAG);
-		List<FogDevice> totalCloudlets = new ArrayList<>();
-		
-		for (MobileDevice md : devices.keySet()) {
-			totalCloudlets.addAll(serverClouletsAvailableList(devices.get(md), md));
-		}
-		
-		return totalCloudlets;
-	}
 	
 	public static int nextServerCloudlet(List<FogDevice> serverCloudlets, MobileDevice smartThing) {
-		System.out.printf("%s: nextServerCloudlet%n", TAG);
-		// Policy: the closest serverCloudlet
+		System.out.printf("%s: nextServerClouldlet%n", TAG);
 		
-		// Accumulate requisitions. When it gets REQUEST_LIMITS, then the method for calculating will be called.
-		int REQUESTS_LIMIT = 1;
-		if (devicesWaitList.size() < REQUESTS_LIMIT) {
-			System.out.printf("%s: added to the list - size: %d %n", TAG, devicesWaitList.size());
-			devicesWaitList.put(smartThing, serverCloudlets);
-			
-			return -1;
-		} else {
-			System.out.printf("%s: filled list%n", TAG);
-			
-			List<FogDevice> allAvailableCloudlets = mergeAvailableCloudlets(devicesWaitList);
-			setServerCloudletsAvailable(allAvailableCloudlets);
-			if (getServerCloudletsAvailable().size() == 0) {
-				return -1;
-			}
-			else {
-				// TODO: PROBLEMA FUTURO-> tenho que retornar alocação pra cada usuário que entrou na lista. Aqui retorno pra 1 só.
-				List<MobileDevice> reqSmartThings = new ArrayList<> (devicesWaitList.keySet());
-				devicesWaitList.clear();
-				return allocator.calculateAllocations(allAvailableCloudlets, 
-						reqSmartThings);
-			}			
-		}
+		return DeviceFacade.getInstance().getCalculatedCloudlet(smartThing);
 	}
 
 	public static boolean isEdgeAp(ApDevice apDevice, MobileDevice smartThing) {
@@ -478,7 +439,7 @@ public class Migration {
 	}
 
 	public static void setServerCloudletsAvailable(List<FogDevice> serverCloudletsAvailable) {
-		System.out.printf("%s: setSErverCloudletsAvailable%n", TAG);
+		System.out.printf("%s: setServerCloudletsAvailable%n", TAG);
 		Migration.serverCloudletsAvailable = serverCloudletsAvailable;
 	}
 

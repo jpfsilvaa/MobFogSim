@@ -851,6 +851,8 @@ public class FogDevice extends PowerDatacenter {
 	}
 
 	private void deliveryVM(SimEvent ev) {
+		System.out.printf("%s: deliveryVM%n", TAG);
+		
 		MobileDevice smartThing = (MobileDevice) ev.getData();
 		if (MobileController.getSmartThings().contains(smartThing)) {
 
@@ -998,7 +1000,7 @@ public class FogDevice extends PowerDatacenter {
 				if (st.getVmLocalServerCloudlet().getMigrationStrategy().shouldMigrate(st)) {
 					if (!st.getVmLocalServerCloudlet().equals(st.getDestinationServerCloudlet())) {
 						System.out.println("====================ToMigrate================== "
-							+ st.getName() + " " + st.getId());
+							+ st.getName() + " " + st.getMyId());
 						LogMobile.debug("FogDevice.java", "Distance between " + st.getName()
 							+ " and " + st.getSourceAp().getName() + ": " +
 							Distances.checkDistance(st.getCoord(), st.getSourceAp().getCoord()));
@@ -1024,6 +1026,7 @@ public class FogDevice extends PowerDatacenter {
 					}
 				}
 				else {
+					System.out.printf("%s: NO_MIGRATION%n", TAG);
 					sendNow(getId(), MobileEvents.NO_MIGRATION, st);
 				}
 			}

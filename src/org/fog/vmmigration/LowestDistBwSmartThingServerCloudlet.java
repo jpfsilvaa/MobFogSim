@@ -7,6 +7,7 @@ import org.fog.entities.ApDevice;
 import org.fog.entities.FogDevice;
 import org.fog.entities.MobileDevice;
 import org.fog.localization.DiscoverLocalization;
+import org.fog.optimization.facade.DeviceFacade;
 
 public class LowestDistBwSmartThingServerCloudlet implements DecisionMigration {
 
@@ -34,7 +35,8 @@ public class LowestDistBwSmartThingServerCloudlet implements DecisionMigration {
 
 	@Override
 	public boolean shouldMigrate(MobileDevice smartThing) {
-		System.out.printf("%s: shoudMigrate%n", TAG);
+		System.out.printf("%s: shouldMigrate%n", TAG);
+
 		if (smartThing.getSpeed() == 0) {// smartThing is mobile
 			return false;// no migration
 		}
@@ -47,25 +49,32 @@ public class LowestDistBwSmartThingServerCloudlet implements DecisionMigration {
 		// handoff already has occur. The worst case
 		if (!(smartThing.isMigPoint() && smartThing.isMigZone())) {
 			return false;// no migration
-		}
-		else {
-			// choose the closest cloudlet, it returns the Id or -1
-			setNextServerClouletId(Migration.nextServerCloudlet(serverCloudlets, smartThing));
-			if (getNextServerClouletId() < 0) {// Does next ServerCloudlet exist?
+		} else {
+			if (!smartThing.isCloudletCalculated()) {
+				System.out.printf("%s: shouldMigrate - smartThing.isCloudletCalculated() = false / SmartThing id: %d%n", TAG, smartThing.getMyId());
+				DeviceFacade.getInstance().addSmartThingInWaitList(smartThing, serverCloudlets);
 				return false;
+			} else {
+				System.out.printf("%s: shouldMigrate - smartThing.isCloudletCalculated() = true / SmartThing id: %d%n", TAG, smartThing.getMyId());
+				setNextServerClouletId(Migration.nextServerCloudlet(serverCloudlets, smartThing));
+				smartThing.setCloudletCalculated(false);
+				if (getNextServerClouletId() < 0) {// Does next ServerCloudlet exist?
+					return false;
+				}
+				// It creates a temporary List to invoke the nextAp
+				List<ApDevice> tempListAps = new ArrayList<>();
+				for (ApDevice ap : serverCloudlets.get(getNextServerClouletId()).getApDevices()) {
+					tempListAps.add(ap);
+				}
+				setNextApId(Migration.nextAp(tempListAps, smartThing));
+				if (getNextApId() < 0) {
+				}
+				// verify if the next Ap is edge (return false if the ServerCloudlet destination is the same ServerCloud source)
+				else if (!Migration.isEdgeAp(apDevices.get(getNextApId()), smartThing)) {
+					return false;// no migration
+				}
 			}
-			// It creates a temporary List to invoke the nextAp
-			List<ApDevice> tempListAps = new ArrayList<>();
-			for (ApDevice ap : serverCloudlets.get(getNextServerClouletId()).getApDevices()) {
-				tempListAps.add(ap);
-			}
-			setNextApId(Migration.nextAp(tempListAps, smartThing));
-			if (getNextApId() < 0) {
-			}
-			// verify if the next Ap is edge (return false if the ServerCloudlet destination is the same ServerCloud source)
-			else if (!Migration.isEdgeAp(apDevices.get(getNextApId()), smartThing)) {
-				return false;// no migration
-			}
+			
 		}
 		return ServiceAgreement.serviceAgreement(serverCloudlets.get(getNextServerClouletId()),
 			smartThing);

@@ -1,10 +1,11 @@
 package org.fog.optimization;
 
+import java.util.HashMap;
 import java.util.List;
 
 import org.fog.entities.FogDevice;
 import org.fog.entities.MobileDevice;
-import org.fog.optimization.facade.DeviceCharacsFacade;
+import org.fog.optimization.facade.DeviceFacade;
 import org.fog.vmmigration.Migration;
 
 public class Allocation {
@@ -20,23 +21,21 @@ public class Allocation {
 	 * 
 	 * @param cloudlets available in distance
 	 * @param smartThings requesting resources
-	 * @return (WORKING) one cloudlet id 
+	 * @return hashmap of smartThings with the respective calculated cloudlets
 	 * 
-	 * (in the future, must return a set of cloudlet ids for all smartThing requesting)
 	 */
-	public int calculateAllocations(List<FogDevice> cloudlets, List<MobileDevice> smartThings) {
+	public HashMap<MobileDevice, FogDevice> calculateAllocations(List<FogDevice> cloudlets, List<MobileDevice> smartThings) {
 		System.out.printf("%s: calculateAllocation%n", TAG);
 		
-		DeviceCharacsFacade facade = DeviceCharacsFacade.getInstance();
-		int cloudletResultId = 0;		
+		DeviceFacade facade = DeviceFacade.getInstance();
+		HashMap<MobileDevice, FogDevice> cloudletResults = new HashMap<>();
 		
-		if (facade.getRAM(cloudlets.get(0)) >= facade.getRAM(smartThings.get(0))) {
-			System.out.printf("%s cloudlet %d allocated%n", TAG, cloudlets.get(0).getMyId());
-			
-			cloudletResultId = cloudlets.get(0).getMyId();
+		// TODO: pli
+		for (int i = 0; i < smartThings.size(); i++) {
+			System.out.printf("%s: smartThing %d for cloudlet %d%n", TAG, smartThings.get(i).getMyId(), cloudlets.get(i).getMyId());
+			cloudletResults.put(smartThings.get(i), cloudlets.get(i));
 		}
 		
-		System.out.printf("%s: calculateAllocation - result: %d%n", TAG, cloudletResultId);
-		return cloudletResultId;
+		return cloudletResults;
 	}
 }

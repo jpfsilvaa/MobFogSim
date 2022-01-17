@@ -52,6 +52,7 @@ public class MobileDevice extends FogDevice {
 	private boolean lockedToHandoff;
 	private boolean lockedToMigration;
 	private boolean abortMigration;
+	private boolean cloudletCalculated;
 	private double vmSize;
 	private double tempSimulation;
 	private double timeFinishHandoff = 0;
@@ -110,6 +111,7 @@ public class MobileDevice extends FogDevice {
 		setLockedToHandoff(false);
 		setLockedToMigration(false);
 		setAbortMigration(false);
+		setCloudletCalculated(false);
 		setMigPoint(false);
 		setMigZone(false);
 		actuators = new HashSet<>();
@@ -599,6 +601,14 @@ public class MobileDevice extends FogDevice {
 
 	public void setAbortMigration(boolean abortMigration) {
 		this.abortMigration = abortMigration;
+	}
+	
+	public boolean isCloudletCalculated() {
+		return cloudletCalculated;
+	}
+
+	public void setCloudletCalculated(boolean cloudletCalculated) {
+		this.cloudletCalculated = cloudletCalculated;
 	}
 
 	public VmMigrationTechnique getMigrationTechnique() {
