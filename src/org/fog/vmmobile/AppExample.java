@@ -778,16 +778,13 @@ public class AppExample {
 		int coordX, coordY;
 		DecisionMigration migrationStrategy;
 		if (getMigStrategyPolicy() == Policies.LOWEST_LATENCY) {
-			System.out.printf("%s: 1A%n", TAG);
 			migrationStrategy = new LowestLatency(getServerCloudlets(),
 				getApDevices(), getMigPointPolicy(), getPolicyReplicaVM());
 		} else if (getMigStrategyPolicy() == Policies.LOWEST_DIST_BW_SMARTTING_SERVERCLOUDLET) {
-			System.out.printf("%s: 2A%n", TAG);
 			migrationStrategy = new LowestDistBwSmartThingServerCloudlet(
 				getServerCloudlets(), getApDevices(), getMigPointPolicy(),
 				getPolicyReplicaVM());
 		} else { // Policies.LOWEST_DIST_BW_SMARTTING_AP
-			System.out.printf("%s: 3A%n", TAG);
 			migrationStrategy = new LowestDistBwSmartThingAP(
 				getServerCloudlets(), getApDevices(), getMigPointPolicy(),
 				getPolicyReplicaVM());

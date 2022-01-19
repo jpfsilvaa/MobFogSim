@@ -5,16 +5,13 @@ import java.util.List;
 
 import org.fog.entities.FogDevice;
 import org.fog.entities.MobileDevice;
-import org.fog.optimization.facade.DeviceFacade;
-import org.fog.vmmigration.Migration;
+
+import gurobi.GRBException;
 
 public class Allocation {
 	
 	private static String TAG = "-------JOAO " + Allocation.class.getName();
-
-	public Allocation() {
-		
-	}
+	private HashMap<MobileDevice, FogDevice> cloudletResults = new HashMap<>();
 	
 	/**
 	 * @author jps
@@ -27,13 +24,12 @@ public class Allocation {
 	public HashMap<MobileDevice, FogDevice> calculateAllocations(List<FogDevice> cloudlets, List<MobileDevice> smartThings) {
 		System.out.printf("%s: calculateAllocation%n", TAG);
 		
-		DeviceFacade facade = DeviceFacade.getInstance();
-		HashMap<MobileDevice, FogDevice> cloudletResults = new HashMap<>();
-		
-		// TODO: pli
-		for (int i = 0; i < smartThings.size(); i++) {
-			System.out.printf("%s: smartThing %d for cloudlet %d%n", TAG, smartThings.get(i).getMyId(), cloudlets.get(i).getMyId());
-			cloudletResults.put(smartThings.get(i), cloudlets.get(i));
+		try {
+			ILPCalculation ILPcalculator = new ILPCalculation(smartThings, cloudlets);
+			cloudletResults = ILPcalculator.solveILP();
+		} catch (GRBException e) {
+			System.out.printf("%s: calculateAllocations exception: %s%n", TAG, e.getMessage());
+			e.printStackTrace();
 		}
 		
 		return cloudletResults;

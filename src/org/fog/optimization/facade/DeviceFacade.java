@@ -23,14 +23,12 @@ public final class DeviceFacade {
 	private static String TAG = "-------JOAO " + DeviceFacade.class.getName();
 	
 	private static DeviceFacade instance;
-	
-	//	Wait list for devices which wants to migrate do another Cloudlet
+
 	public final HashMap<MobileDevice, List<FogDevice>> devicesWaitList = new HashMap<>();
 	public HashMap<MobileDevice, FogDevice> calculatedCloudletsToSmartThings = new HashMap<>();
 	private Allocation allocator = new Allocation();
-//	public boolean cloudletsCalculated = false;
 	
-	public static DeviceFacade getInstance() {
+	public static synchronized DeviceFacade getInstance() {
 		if (instance == null) {
 			instance = new DeviceFacade();
 		}
@@ -102,7 +100,7 @@ public final class DeviceFacade {
 				System.out.printf("%s: smartThing %d is already on the list waiting for migration%n", TAG, st.getMyId());
 			}
 		} else {
-			System.out.printf("%s: filled list%n", TAG);
+			System.out.printf("%s: full wait list%n", TAG);
 			
 			List<FogDevice> allAvailableCloudlets = mergeAvailableCloudlets(devicesWaitList);
 			List<MobileDevice> reqSmartThings = new ArrayList<> (devicesWaitList.keySet());
