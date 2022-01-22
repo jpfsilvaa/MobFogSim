@@ -405,6 +405,7 @@ public class FogDevice extends PowerDatacenter {
 		setChildToLatencyMap(new HashMap<Integer, Double>());
 	}
 
+	// used for creating cloud
 	public FogDevice(
 		String name,
 		FogDeviceCharacteristics characteristics,
@@ -414,6 +415,12 @@ public class FogDevice extends PowerDatacenter {
 		double uplinkBandwidth, double downlinkBandwidth, double uplinkLatency, double ratePerMips)
 		throws Exception {
 		super(name, characteristics, vmAllocationPolicy, storageList, schedulingInterval);
+		
+		apDevices = new HashSet<>();
+		smartThings = new HashSet<>();
+		this.coord = new Coordinate();
+		this.setCoord(0, 0);
+		
 		setCharacteristics(characteristics);
 		setVmAllocationPolicy(vmAllocationPolicy);
 		setLastProcessTime(0.0);

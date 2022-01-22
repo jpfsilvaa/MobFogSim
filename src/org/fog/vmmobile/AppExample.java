@@ -200,16 +200,20 @@ public class AppExample {
 				addApDevicesRandon(apDevices, coordDevices, i);
 			}
 		}
+		
+		createCloud(serverCloudlets, "cloud", 448000, 400000, 100, 10000, 0,
+				0.01, 16 * 103, 16 * 83.25);
 
 		/* It is creating Server Cloudlets. */
 		if (getPositionScPolicy() == Policies.FIXED_SC_LOCATION) {
 			addServerCloudlet(serverCloudlets, coordDevices);
 		} else {
 			// it creates the ServerCloudlets
-			for (int i = 0; i < MaxAndMin.MAX_SERVER_CLOUDLET; i++) {
+			for (int i = 1; i < MaxAndMin.MAX_SERVER_CLOUDLET+1; i++) {
 				addServerCloudlet(serverCloudlets, coordDevices, i);
 			}
 		}
+		
 		createServerCloudletsNetwork(getServerCloudlets());
 		for (FogDevice sc : getServerCloudlets()) {
 			for (FogDevice sc1 : getServerCloudlets()) {
@@ -870,7 +874,7 @@ public class AppExample {
 
 	public static void addServerCloudlet(List<FogDevice> serverCloudlets,
 		Coordinate coordDevices) {
-		int i = 0;
+		int i = 1;
 		int coordX, coordY;
 
 		for (coordX = 0; coordX < MaxAndMin.MAX_X; coordX += (2
@@ -978,10 +982,65 @@ public class AppExample {
 		}
 		LogMobile.debug("AppExample.java", "Total of serverCloudlets: " + i);
 	}
+	
+	private static void createCloud(List<FogDevice> serverCloudlets, String nodeName, long mips,
+		int ram, long upBw, long downBw, int level, double ratePerMips, double busyPower,
+		double idlePower) {
+
+		List<Pe> peList = new ArrayList<Pe>();
+
+		// 3. Create PEs and add these into a list.
+		// need to store Pe id and MIPS Rating
+		peList.add(new Pe(0, new PeProvisionerOverbooking(mips)));
+
+		int hostId = FogUtils.generateEntityId();
+		long storage = 10000000; // host storage
+		int bw = 10000;
+
+		PowerHost host = new PowerHost(
+			hostId,
+			new RamProvisionerSimple(ram),
+			new BwProvisionerOverbooking(bw),
+			storage,
+			peList,
+			new StreamOperatorScheduler(peList),
+			new FogLinearPowerModel(busyPower, idlePower)
+			);
+
+		List<Host> hostList = new ArrayList<Host>();
+		hostList.add(host);
+
+		String arch = "x86"; // system architecture
+		String os = "Linux"; // operating system
+		String vmm = "Xen";
+		double time_zone = 10.0; // time zone this resource located
+		double cost = 3.0; // the cost of using processing in this resource
+		double costPerMem = 0.05; // the cost of using memory in this resource
+		double costPerStorage = 0.001; // the cost of using storage in this resource
+		double costPerBw = 0.0; // the cost of using bw in this resource
+		// we are not adding SAN devices by now
+		LinkedList<Storage> storageList = new LinkedList<Storage>();
+
+		FogDeviceCharacteristics characteristics = new FogDeviceCharacteristics(
+			arch, os, vmm, host, time_zone, cost, costPerMem, costPerStorage, costPerBw);
+
+		FogDevice cloud = null;
+		try {
+			cloud = new FogDevice(nodeName, characteristics,
+				new AppModuleAllocationPolicy(hostList), storageList, 10, upBw, downBw, 0,
+				ratePerMips);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		cloud.setLevel(level);
+		serverCloudlets.add(0, cloud);
+	}
 
 	private static void createServerCloudletsNetwork(List<FogDevice> serverCloudlets) {
 		// for no full graph, use -1 to link
 		HashMap<FogDevice, Double> net = new HashMap<>();
+		
 		int i = 0, j = 0, linha, coluna;
 		for (FogDevice sc : serverCloudlets) {// It makes a full graph
 			j = 0;
@@ -996,16 +1055,19 @@ public class AppExample {
 				coluna = ((int) (j % 12) - (int) (i % 12));
 				if (coluna < 0)
 					coluna *= -1;
+				
+				// increasing delay in case of Cloud
+				double latency = (Math.max(linha, coluna))
+						* getLatencyBetweenCloudlets() + getRand().nextDouble();
+				latency *= (sc.getName() == "cloud" || sc1.getName() == "cloud" ? 100 : 1);
 				if (sc.getUplinkBandwidth() < sc1.getDownlinkBandwidth()) {
 					net.put(sc1, sc.getUplinkBandwidth());
 					NetworkTopology.addLink(sc.getId(), sc1.getId(),
-						sc.getUplinkBandwidth(), (Math.max(linha, coluna))
-							* getLatencyBetweenCloudlets() + getRand().nextDouble());
+						sc.getUplinkBandwidth(), latency);
 				} else {
 					net.put(sc1, sc1.getDownlinkBandwidth());
 					NetworkTopology.addLink(sc.getId(), sc1.getId(),
-						sc1.getDownlinkBandwidth(), (Math.max(linha, coluna))
-							* getLatencyBetweenCloudlets() + getRand().nextDouble());
+						sc1.getDownlinkBandwidth(), latency);
 				}
 				j++;
 			}

@@ -21,16 +21,14 @@ public class Allocation {
 	 * @return hashmap of smartThings with the respective calculated cloudlets
 	 * 
 	 */
-	public HashMap<MobileDevice, FogDevice> calculateAllocations(List<FogDevice> cloudlets, List<MobileDevice> smartThings) {
-		System.out.printf("%s: calculateAllocation%n", TAG);
+	public HashMap<MobileDevice, FogDevice> calculateAllocations(
+			List<FogDevice> cloudlets, 
+			List<MobileDevice> smartThings,
+			int ilpMode) {
+		System.out.printf("%s: ccalculateAllocation%n", TAG);
 		
-		try {
-			ILPCalculation ILPcalculator = new ILPCalculation(smartThings, cloudlets);
-			cloudletResults = ILPcalculator.solveILP();
-		} catch (GRBException e) {
-			System.out.printf("%s: calculateAllocations exception: %s%n", TAG, e.getMessage());
-			e.printStackTrace();
-		}
+		ILPCalculation ILPcalculator = new ILPCalculation(smartThings, cloudlets, ilpMode);
+		cloudletResults = ILPcalculator.solveILP();
 		
 		return cloudletResults;
 	}

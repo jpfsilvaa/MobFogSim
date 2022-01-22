@@ -3,11 +3,24 @@ package org.fog.optimization.facade;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 
+import org.cloudbus.cloudsim.Host;
+import org.cloudbus.cloudsim.Pe;
+import org.cloudbus.cloudsim.Storage;
+import org.cloudbus.cloudsim.power.PowerHost;
+import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
+import org.cloudbus.cloudsim.sdn.overbooking.BwProvisionerOverbooking;
+import org.cloudbus.cloudsim.sdn.overbooking.PeProvisionerOverbooking;
 import org.fog.entities.FogDevice;
+import org.fog.entities.FogDeviceCharacteristics;
 import org.fog.entities.MobileDevice;
 import org.fog.optimization.Allocation;
+import org.fog.policy.AppModuleAllocationPolicy;
+import org.fog.scheduler.StreamOperatorScheduler;
+import org.fog.utils.FogLinearPowerModel;
+import org.fog.utils.FogUtils;
 import org.fog.vmmigration.Migration;
 
 /**
@@ -27,6 +40,7 @@ public final class DeviceFacade {
 	public final HashMap<MobileDevice, List<FogDevice>> devicesWaitList = new HashMap<>();
 	public HashMap<MobileDevice, FogDevice> calculatedCloudletsToSmartThings = new HashMap<>();
 	private Allocation allocator = new Allocation();
+	private int ilpMode = 1;
 	
 	public static synchronized DeviceFacade getInstance() {
 		if (instance == null) {
@@ -106,13 +120,14 @@ public final class DeviceFacade {
 			List<MobileDevice> reqSmartThings = new ArrayList<> (devicesWaitList.keySet());
 			
 			if (!allAvailableCloudlets.isEmpty()) {
-				calculatedCloudletsToSmartThings = allocator.calculateAllocations(allAvailableCloudlets, reqSmartThings);
+				ilpMode = 2;
+				calculatedCloudletsToSmartThings = allocator.calculateAllocations(allAvailableCloudlets, reqSmartThings, ilpMode);
 				DeviceFacade.getInstance().devicesWaitList.clear();
 			}
 			
 			for (MobileDevice reqSmartThing : reqSmartThings) {
 				reqSmartThing.setCloudletCalculated(true);
-				System.out.printf("%s: cloudlet calculated for smart thing : %d%n", TAG, reqSmartThing.getMyId());
+				System.out.printf("%s: cloudlet calculated for smart thing %d%n", TAG, reqSmartThing.getMyId());
 			}
 			
 		}

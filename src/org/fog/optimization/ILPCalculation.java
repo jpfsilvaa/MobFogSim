@@ -3,6 +3,7 @@ package org.fog.optimization;
 import java.util.HashMap;
 import java.util.List;
 
+import org.cloudbus.cloudsim.NetworkTopology;
 import org.fog.entities.FogDevice;
 import org.fog.entities.MobileDevice;
 import org.fog.optimization.facade.DeviceFacade;
@@ -26,14 +27,14 @@ public class ILPCalculation {
     private GRBModel model;
     private DeviceFacade dfInstance;
     private GRBVar[][] allocate;
+    private int ilpMode = 1; // 1 for pli-1 and 2 for pli-2
 	
-    // TODO: COLOCAR TRY/CATCH NO METODO QUE CHAMA TODOS OS METODOS
-    
-	public ILPCalculation(List<MobileDevice> smartThings, List<FogDevice> availableCloudlets) throws GRBException {
+	public ILPCalculation(List<MobileDevice> smartThings, List<FogDevice> availableCloudlets, int ilpMode) {
 		System.out.printf("%s: ILPCalculation%n", TAG);
 		this.smartThings = smartThings;
 		this.availableCloudlets = availableCloudlets;
 		this.dfInstance = DeviceFacade.getInstance();
+		this.ilpMode = ilpMode;
 		createModelAndEnv();
 		
 		availableCloudlets.add(0, AppExample.getServerCloudlets().get(0));
@@ -67,12 +68,29 @@ public class ILPCalculation {
 		}
 	}
 	
+	private double getDelay(FogDevice destinyCloudlet, FogDevice sourceCloudlet) {
+		return NetworkTopology.getDelay(destinyCloudlet.getId(), sourceCloudlet.getId());
+	}
+	
 	private void defineObjectiveFunction() {
 		System.out.printf("%s: defineObjectiveFunction%n", TAG);
 		GRBLinExpr obj = new GRBLinExpr();
-		for (int st = 0; st < smartThings.size(); st++) {
-			obj.addTerm(1, allocate[0][st]);
-		}
+		
+		if (ilpMode == 1) {
+			for (int st = 0; st < smartThings.size(); st++) {
+				obj.addTerm(1, allocate[0][st]);
+			}
+		} else if (ilpMode == 2) {
+			for (int st = 0; st < smartThings.size(); st++) {
+				for (int cl = 0; cl < availableCloudlets.size(); cl++) {
+					obj.addTerm(
+							getDelay(
+									availableCloudlets.get(cl), 
+									smartThings.get(st).getVmLocalServerCloudlet())
+							, allocate[cl][st]);
+				}
+			}
+		}		
 		
 		try {
 			model.setObjective(obj, GRB.MINIMIZE);
@@ -93,7 +111,6 @@ public class ILPCalculation {
 			
 			double clStorage = (double) dfInstance.getStorage(availableCloudlets.get(cl));
 			try {
-				if (cl == 0) clStorage *= 100; // caso seja fakeCloud
 				model.addConstr(leftStorageConstr, GRB.LESS_EQUAL, clStorage, "storage[" + availableCloudlets.get(cl).getMyId() + "]");
 			} catch (GRBException e) {
 				System.out.printf("%s: createConstraints exception: %s%n", TAG, e.getMessage());
@@ -113,7 +130,6 @@ public class ILPCalculation {
 			
 			double clCPU = dfInstance.getMIPS(availableCloudlets.get(cl));
 			try {
-				if (cl == 0) clCPU *= 100; // caso seja fakeCloud
 				model.addConstr(leftCPUConstr, GRB.LESS_EQUAL, clCPU, "cpu[" + availableCloudlets.get(cl).getMyId() + "]");
 			} catch (GRBException e) {
 				System.out.printf("%s: createConstraints exception: %s%n", TAG, e.getMessage());
@@ -133,7 +149,6 @@ public class ILPCalculation {
 			
 			int clRAM = dfInstance.getRAM(availableCloudlets.get(cl));
 			try {
-				if (cl == 0) clRAM *= 100; // caso seja fakeCloud
 				model.addConstr(leftRAMConstr, GRB.LESS_EQUAL, clRAM, "ram[" + availableCloudlets.get(cl).getMyId() + "]");
 			} catch (GRBException e) {
 				System.out.printf("%s: createConstraints exception: %s%n", TAG, e.getMessage());
@@ -147,7 +162,6 @@ public class ILPCalculation {
 		for (int st = 0; st < smartThings.size(); st++) {
 			GRBLinExpr limitCloudletConstr = new GRBLinExpr();
 			for (int cl = 0; cl < availableCloudlets.size(); cl++) {
-				int stRAM = dfInstance.getRAM(smartThings.get(st));
 				limitCloudletConstr.addTerm(1, allocate[cl][st]);
 			}
 			
@@ -222,8 +236,7 @@ public class ILPCalculation {
 		}
 		
 		printResult();
-		return getResult();
-		
+		return getResult();	
 	}
 	
 }
