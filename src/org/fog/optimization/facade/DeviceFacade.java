@@ -90,12 +90,15 @@ public final class DeviceFacade {
 	 * @param devices waiting to be allocated
 	 * @return a merged list of cloudlets available for all devices in the hashmap
 	 */
-	private List<FogDevice> mergeAvailableCloudlets(HashMap<MobileDevice, List<FogDevice>> devices){
+	private List<FogDevice> mergeAvailableCloudlets(){
 		System.out.printf("%s: mergeAvailableCloudlets%n", TAG);
 		HashSet<FogDevice> totalCloudlets = new HashSet<>();
 		
-		for (MobileDevice md : devices.keySet()) {
-			totalCloudlets.addAll(Migration.serverClouletsAvailableList(devices.get(md), md));
+		for (MobileDevice md : devicesWaitList.keySet()) {
+			// it could happens if: the smartThis was disconnected (by distance, migration, or event)
+			if (md.getSourceServerCloudlet() != null) {
+				totalCloudlets.addAll(Migration.serverClouletsAvailableList(devicesWaitList.get(md), md));
+			}
 		}
 		
 		return new ArrayList<FogDevice>(totalCloudlets);
@@ -131,7 +134,7 @@ public final class DeviceFacade {
 		} else {
 			System.out.printf("%s: full wait list%n", TAG);
 			
-			List<FogDevice> allAvailableCloudlets = mergeAvailableCloudlets(devicesWaitList);
+			List<FogDevice> allAvailableCloudlets = mergeAvailableCloudlets();
 			List<MobileDevice> reqSmartThings = new ArrayList<> (devicesWaitList.keySet());
 			
 			if (!allAvailableCloudlets.isEmpty()) {
