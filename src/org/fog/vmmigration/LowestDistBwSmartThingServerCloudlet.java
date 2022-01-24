@@ -48,6 +48,7 @@ public class LowestDistBwSmartThingServerCloudlet implements DecisionMigration {
 		smartThing.getMigrationTechnique().verifyPoints(smartThing, getSmartThingPosition());
 		// handoff already has occur. The worst case
 		if (!(smartThing.isMigPoint() && smartThing.isMigZone())) {
+			System.out.printf("%s: shouldMigrate - smartThing.isMigPoint() && smartThing.isMigZone() = false%n", TAG, smartThing.getMyId());
 			return false;// no migration
 		} else {
 			if (!smartThing.isCloudletCalculated()) {
@@ -71,6 +72,7 @@ public class LowestDistBwSmartThingServerCloudlet implements DecisionMigration {
 				}
 				// verify if the next Ap is edge (return false if the ServerCloudlet destination is the same ServerCloud source)
 				else if (!Migration.isEdgeAp(apDevices.get(getNextApId()), smartThing)) {
+					System.out.printf("%s: shouldMigrate - Migration.isEdgeAp = false%n", TAG, smartThing.getMyId());
 					return false;// no migration
 				}
 			}

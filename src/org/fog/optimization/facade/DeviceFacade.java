@@ -64,7 +64,7 @@ public final class DeviceFacade {
 			MobileDevice smartThing = (MobileDevice) device;
 			return smartThing.getVmMobileDevice().getMips();
 		} else {
-			return device.getHost().getTotalMips();
+			return device.getHost().getMaxAvailableMips();
 		}
 	}
 	
@@ -73,7 +73,7 @@ public final class DeviceFacade {
 			MobileDevice smartThing = (MobileDevice) device;
 			return smartThing.getVmMobileDevice().getRam();
 		} else {
-			return device.getHost().getRam();
+			return device.getHost().getRamProvisioner().getAvailableRam();
 		}
 	}
 	

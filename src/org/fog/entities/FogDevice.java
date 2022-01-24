@@ -1000,7 +1000,7 @@ public class FogDevice extends PowerDatacenter {
 	}
 
 	private void invokeDecisionMigration(SimEvent ev) {
-//		System.out.printf("%s: invokeDecisionMigration%n", TAG);
+		System.out.printf("%s: invokeDecisionMigration%n", TAG);
 		for (MobileDevice st : getSmartThings()) {
 			//Only the connected smartThings
 			if (st.getSourceAp() != null && (!st.isLockedToMigration())) {
@@ -1029,14 +1029,17 @@ public class FogDevice extends PowerDatacenter {
 						saveMigration(st);
 					}
 					else {
+						System.out.printf("%s: invokeDecisionMigration 1 - NO_MIGRATION%n", TAG);
 						sendNow(getId(), MobileEvents.NO_MIGRATION, st);
 					}
 				}
 				else {
+					System.out.printf("%s: invokeDecisionMigration 2 - NO_MIGRATION%n", TAG);
 					sendNow(getId(), MobileEvents.NO_MIGRATION, st);
 				}
 			}
 			else {
+				System.out.printf("%s: invokeDecisionMigration 3 - NO_MIGRATION%n", TAG);
 				sendNow(getId(), MobileEvents.NO_MIGRATION, st);
 
 			}
