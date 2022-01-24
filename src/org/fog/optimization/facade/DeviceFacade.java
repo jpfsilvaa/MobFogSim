@@ -78,7 +78,8 @@ public final class DeviceFacade {
 	}
 	
 	public int getCalculatedCloudlet(MobileDevice smartThingKey) {
-		System.out.printf("%s: getCalculatedCloudlet%n", TAG);
+		System.out.printf("%s: getCalculatedCloudlet for smart thing %d%n", TAG, smartThingKey.getMyId());
+		System.out.printf("%s: cloudlet result %d%n", TAG, calculatedCloudletsToSmartThings.get(smartThingKey).getMyId());
 		
 		return calculatedCloudletsToSmartThings.get(smartThingKey).getMyId();
 	}
@@ -98,6 +99,20 @@ public final class DeviceFacade {
 		}
 		
 		return new ArrayList<FogDevice>(totalCloudlets);
+	}
+	
+	/**
+	 * Reset all the smartThings calculated that did not call for migration again,
+	 * and then it did not uses the cloudlet result e must not stay as 'true' 
+	 * for 'calculated cloudlet' attribute 
+	 */
+	private void resetCalculatedCloudlets() {
+		System.out.printf("%s: resetCalculatedCloudlets%n", TAG);
+		if (calculatedCloudletsToSmartThings.size() > 0) {
+			for (MobileDevice st : calculatedCloudletsToSmartThings.keySet()) {
+				st.setCloudletCalculated(false);
+			}
+		}
 	}
 	
 	public void addSmartThingInWaitList(MobileDevice st, List<FogDevice> cloudlets) {
@@ -121,6 +136,7 @@ public final class DeviceFacade {
 			
 			if (!allAvailableCloudlets.isEmpty()) {
 				ilpMode = 2;
+				resetCalculatedCloudlets();
 				calculatedCloudletsToSmartThings = allocator.calculateAllocations(allAvailableCloudlets, reqSmartThings, ilpMode);
 				DeviceFacade.getInstance().devicesWaitList.clear();
 			}
