@@ -25,7 +25,7 @@ public class Allocation {
 			List<FogDevice> cloudlets, 
 			List<MobileDevice> smartThings,
 			int ilpMode) {
-		System.out.printf("%s: ccalculateAllocation%n", TAG);
+		System.out.printf("%s: calculateAllocation%n", TAG);
 		
 		ILPCalculation ILPcalculator = new ILPCalculation(smartThings, cloudlets, ilpMode);
 		cloudletResults = ILPcalculator.solveILP();

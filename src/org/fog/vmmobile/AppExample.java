@@ -49,6 +49,7 @@ import org.fog.entities.MobileSensor;
 import org.fog.entities.Tuple;
 import org.fog.localization.Coordinate;
 import org.fog.localization.Distances;
+import org.fog.optimization.facade.SimulationClockFacade;
 import org.fog.placement.MobileController;
 import org.fog.placement.ModuleMapping;
 import org.fog.policy.AppModuleAllocationPolicy;
@@ -506,6 +507,7 @@ public class AppExample {
 		System.setOut(new PrintStream("out.txt"));
 		System.out.println("Inicio: " + Calendar.getInstance().getTime());
 		CloudSim.startSimulation();
+		SimulationClockFacade.getInstance().setLastCalculationTime(CloudSim.clock());
 		System.out.println("Simulation over");
 		CloudSim.stopSimulation();
 	}
@@ -887,16 +889,13 @@ public class AppExample {
 				/ 3)), i++) { /* evenly distributed */
 				DecisionMigration migrationStrategy;
 				if (getMigStrategyPolicy() == Policies.LOWEST_LATENCY) {
-					System.out.printf("%s: 1B%n", TAG);
 					migrationStrategy = new LowestLatency(getServerCloudlets(),
 						getApDevices(), getMigPointPolicy(), getPolicyReplicaVM());
 				} else if (getMigStrategyPolicy() == Policies.LOWEST_DIST_BW_SMARTTING_SERVERCLOUDLET) {
-					System.out.printf("%s: 2B%n", TAG);
 					migrationStrategy = new LowestDistBwSmartThingServerCloudlet(
 						getServerCloudlets(), getApDevices(),
 						getMigPointPolicy(), getPolicyReplicaVM());
 				} else { // LOWEST_DIST_BW_SMARTTING_AP
-					System.out.printf("%s: 3B%n", TAG);
 					migrationStrategy = new LowestDistBwSmartThingAP(
 						getServerCloudlets(), getApDevices(),
 						getMigPointPolicy(), getPolicyReplicaVM());

@@ -9,6 +9,7 @@ import java.util.List;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Pe;
 import org.cloudbus.cloudsim.Storage;
+import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.power.PowerHost;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
 import org.cloudbus.cloudsim.sdn.overbooking.BwProvisionerOverbooking;
@@ -34,13 +35,17 @@ import org.fog.vmmigration.Migration;
 public final class DeviceFacade {
 	
 	private static String TAG = "-------JOAO " + DeviceFacade.class.getName();
-	
 	private static DeviceFacade instance;
 
 	public final HashMap<MobileDevice, List<FogDevice>> devicesWaitList = new HashMap<>();
 	public HashMap<MobileDevice, FogDevice> calculatedCloudletsToSmartThings = new HashMap<>();
 	private Allocation allocator = new Allocation();
 	private int ilpMode = 1;
+	private SimulationClockFacade simClock;
+	
+	private DeviceFacade() {
+		simClock = SimulationClockFacade.getInstance();
+	}
 	
 	public static synchronized DeviceFacade getInstance() {
 		if (instance == null) {
@@ -121,21 +126,13 @@ public final class DeviceFacade {
 	public void addSmartThingInWaitList(MobileDevice st, List<FogDevice> cloudlets) {
 		System.out.printf("%s: addSmartThingInWaitList%n", TAG);
 		
-		// Accumulate requisitions. When it gets REQUEST_LIMITS, then the method for calculating will be called.
-		int REQUESTS_LIMIT = 2;
-		
-		if (devicesWaitList.size() < REQUESTS_LIMIT) {
-			if (!devicesWaitList.containsKey(st)) {
-				devicesWaitList.put(st, cloudlets);
-				System.out.printf("%s: added to the list - size: %d %n", TAG, devicesWaitList.size());
-			} else {
-				System.out.printf("%s: smartThing %d is already on the list waiting for migration%n", TAG, st.getMyId());
-			}
-		} else {
-			System.out.printf("%s: full wait list%n", TAG);
+		if (simClock.isCalculationReleased()) {
+			System.out.printf("%s: calc released%n", TAG);
 			
 			List<FogDevice> allAvailableCloudlets = mergeAvailableCloudlets();
 			List<MobileDevice> reqSmartThings = new ArrayList<> (devicesWaitList.keySet());
+			
+			simClock.setLastCalculationTime(CloudSim.clock());
 			
 			if (!allAvailableCloudlets.isEmpty()) {
 				ilpMode = 2;
@@ -148,7 +145,13 @@ public final class DeviceFacade {
 				reqSmartThing.setCloudletCalculated(true);
 				System.out.printf("%s: cloudlet calculated for smart thing %d%n", TAG, reqSmartThing.getMyId());
 			}
-			
+		} else {
+			if (!devicesWaitList.containsKey(st)) {
+				devicesWaitList.put(st, cloudlets);
+				System.out.printf("%s: added to the list - size: %d %n", TAG, devicesWaitList.size());
+			} else {
+				System.out.printf("%s: smartThing %d is already on the list waiting for migration%n", TAG, st.getMyId());
+			}			
 		}
 	}
 	
