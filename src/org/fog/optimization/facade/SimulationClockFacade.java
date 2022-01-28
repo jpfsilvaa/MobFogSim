@@ -8,7 +8,7 @@ public final class SimulationClockFacade {
 	private static SimulationClockFacade instance;
 	
 	private double lastCalculationTime;
-	private final int CALCULATION_TIME_INTERVAL = 15;
+	private final int CALCULATION_TIME_INTERVAL = 15 * 1000;
 	
 	private SimulationClockFacade() {}
 	
@@ -21,6 +21,8 @@ public final class SimulationClockFacade {
 	}
 	
 	public boolean isCalculationReleased() {
+		System.out.printf("%s: isCalculationReleased%n", TAG);
+		System.out.printf("%s: current clock -> %f // lastCalculationTime -> %f%n", TAG, CloudSim.clock(), lastCalculationTime);
 		if (CloudSim.clock() >= lastCalculationTime 
 				+ CALCULATION_TIME_INTERVAL) {
 			return true;
@@ -30,6 +32,7 @@ public final class SimulationClockFacade {
 	}
 	
 	public void setLastCalculationTime(double lastCalculationTime) {
+		System.out.printf("%s: setLastCalculationTime - %f%n", TAG, lastCalculationTime);
 		this.lastCalculationTime = lastCalculationTime;
 	}
 	

@@ -38,6 +38,7 @@ import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.localization.Coordinate;// myiFogSim
 import org.fog.localization.Distances;
+import org.fog.optimization.facade.OptLogger;
 import org.fog.placement.MobileController;
 import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.scheduler.StreamOperatorScheduler;
@@ -137,7 +138,7 @@ public class FogDevice extends PowerDatacenter {
 
 	protected int myId;
 	
-	private static String TAG = "-------JOAO " + FogDevice.class.getName();
+	private static String TAG = FogDevice.class.getName();
 
 	public int getMyId() {
 		return myId;
@@ -605,7 +606,6 @@ public class FogDevice extends PowerDatacenter {
 			manageResources(ev);
 			break;
 		case MobileEvents.MAKE_DECISION_MIGRATION:
-//			System.out.printf("%s MAKE_DECISION_MIGRATION%n", TAG);
 			invokeDecisionMigration(ev);
 			break;
 		case MobileEvents.TO_MIGRATION:
@@ -857,9 +857,7 @@ public class FogDevice extends PowerDatacenter {
 		}
 	}
 
-	private void deliveryVM(SimEvent ev) {
-		System.out.printf("%s: deliveryVM%n", TAG);
-		
+	private void deliveryVM(SimEvent ev) {		
 		MobileDevice smartThing = (MobileDevice) ev.getData();
 		if (MobileController.getSmartThings().contains(smartThing)) {
 
@@ -1000,7 +998,7 @@ public class FogDevice extends PowerDatacenter {
 	}
 
 	private void invokeDecisionMigration(SimEvent ev) {
-		System.out.printf("%s: invokeDecisionMigration%n", TAG);
+		OptLogger.debug(TAG, "invokeDecisionMigration");
 		for (MobileDevice st : getSmartThings()) {
 			//Only the connected smartThings
 			if (st.getSourceAp() != null && (!st.isLockedToMigration())) {
@@ -1029,17 +1027,14 @@ public class FogDevice extends PowerDatacenter {
 						saveMigration(st);
 					}
 					else {
-						System.out.printf("%s: invokeDecisionMigration 1 - NO_MIGRATION%n", TAG);
 						sendNow(getId(), MobileEvents.NO_MIGRATION, st);
 					}
 				}
 				else {
-					System.out.printf("%s: invokeDecisionMigration 2 - NO_MIGRATION%n", TAG);
 					sendNow(getId(), MobileEvents.NO_MIGRATION, st);
 				}
 			}
 			else {
-				System.out.printf("%s: invokeDecisionMigration 3 - NO_MIGRATION%n", TAG);
 				sendNow(getId(), MobileEvents.NO_MIGRATION, st);
 
 			}

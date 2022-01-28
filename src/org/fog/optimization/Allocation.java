@@ -5,12 +5,13 @@ import java.util.List;
 
 import org.fog.entities.FogDevice;
 import org.fog.entities.MobileDevice;
+import org.fog.optimization.facade.OptLogger;
 
 import gurobi.GRBException;
 
 public class Allocation {
 	
-	private static String TAG = "-------JOAO " + Allocation.class.getName();
+	private static String TAG = Allocation.class.getName();
 	private HashMap<MobileDevice, FogDevice> cloudletResults = new HashMap<>();
 	
 	/**
@@ -25,7 +26,7 @@ public class Allocation {
 			List<FogDevice> cloudlets, 
 			List<MobileDevice> smartThings,
 			int ilpMode) {
-		System.out.printf("%s: calculateAllocation%n", TAG);
+		OptLogger.debug(TAG, "calculateAllocation");
 		
 		ILPCalculation ILPcalculator = new ILPCalculation(smartThings, cloudlets, ilpMode);
 		cloudletResults = ILPcalculator.solveILP();

@@ -8,6 +8,7 @@ import org.fog.entities.FogDevice;
 import org.fog.entities.MobileDevice;
 import org.fog.localization.DiscoverLocalization;
 import org.fog.optimization.facade.DeviceFacade;
+import org.fog.optimization.facade.OptLogger;
 
 public class LowestDistBwSmartThingServerCloudlet implements DecisionMigration {
 
@@ -21,12 +22,11 @@ public class LowestDistBwSmartThingServerCloudlet implements DecisionMigration {
 	private boolean migZone;
 	private boolean migPoint;
 	private int policyReplicaVM;
-	private static String TAG = "-------JOAO " + LowestDistBwSmartThingServerCloudlet.class.getName();
+	private static String TAG = LowestDistBwSmartThingServerCloudlet.class.getName();
 
 	public LowestDistBwSmartThingServerCloudlet(List<FogDevice> serverCloudlets,
 		List<ApDevice> apDevices, int migPointPolicy, int policyReplicaVM) {
 		super();
-		System.out.printf("%s: creating object%n", TAG);
 		setServerCloudlets(serverCloudlets);
 		setApDevices(apDevices);
 		setMigPointPolicy(migPointPolicy);
@@ -35,7 +35,7 @@ public class LowestDistBwSmartThingServerCloudlet implements DecisionMigration {
 
 	@Override
 	public boolean shouldMigrate(MobileDevice smartThing) {
-		System.out.printf("%s: shouldMigrate%n", TAG);
+		OptLogger.debug(TAG, "shouldMigrate");
 
 		if (smartThing.getSpeed() == 0) {// smartThing is mobile
 			return false;// no migration
@@ -48,15 +48,17 @@ public class LowestDistBwSmartThingServerCloudlet implements DecisionMigration {
 		smartThing.getMigrationTechnique().verifyPoints(smartThing, getSmartThingPosition());
 		// handoff already has occur. The worst case
 		if (!(smartThing.isMigPoint() && smartThing.isMigZone())) {
-			System.out.printf("%s: shouldMigrate - smartThing.isMigPoint() && smartThing.isMigZone() = false%n", TAG, smartThing.getMyId());
+			OptLogger.debug(TAG, "shouldMigrate -  smartThing.isMigPoint() && smartThing.isMigZone() = false");
 			return false;// no migration
 		} else {
 			if (!smartThing.isCloudletCalculated()) {
-				System.out.printf("%s: shouldMigrate - smartThing.isCloudletCalculated() = false / SmartThing id: %d%n", TAG, smartThing.getMyId());
+				OptLogger.debug(TAG, "shouldMigrate - smartThing.isCloudletCalculated() = false / SmartThing id: "
+							+ smartThing.getMyId());
 				DeviceFacade.getInstance().addSmartThingInWaitList(smartThing, serverCloudlets);
 				return false;
 			} else {
-				System.out.printf("%s: shouldMigrate - smartThing.isCloudletCalculated() = true / SmartThing id: %d%n", TAG, smartThing.getMyId());
+				OptLogger.debug(TAG, "shouldMigrate - smartThing.isCloudletCalculated() = true / SmartThing id: "
+							+ smartThing.getMyId());
 				setNextServerClouletId(Migration.nextServerCloudlet(serverCloudlets, smartThing));
 				smartThing.setCloudletCalculated(false);
 				if (getNextServerClouletId() < 0) {// Does next ServerCloudlet exist?
@@ -72,7 +74,7 @@ public class LowestDistBwSmartThingServerCloudlet implements DecisionMigration {
 				}
 				// verify if the next Ap is edge (return false if the ServerCloudlet destination is the same ServerCloud source)
 				else if (!Migration.isEdgeAp(apDevices.get(getNextApId()), smartThing)) {
-					System.out.printf("%s: shouldMigrate - Migration.isEdgeAp = false%n", TAG, smartThing.getMyId());
+					OptLogger.debug(TAG, "shouldMigrate - Migration.isEdgeAp = false");
 					return false;// no migration
 				}
 			}

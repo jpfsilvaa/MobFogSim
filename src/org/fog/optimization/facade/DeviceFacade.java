@@ -34,7 +34,7 @@ import org.fog.vmmigration.Migration;
  */
 public final class DeviceFacade {
 	
-	private static String TAG = "-------JOAO " + DeviceFacade.class.getName();
+	private static String TAG = DeviceFacade.class.getName();
 	private static DeviceFacade instance;
 
 	public final HashMap<MobileDevice, List<FogDevice>> devicesWaitList = new HashMap<>();
@@ -83,8 +83,7 @@ public final class DeviceFacade {
 	}
 	
 	public int getCalculatedCloudlet(MobileDevice smartThingKey) {
-		System.out.printf("%s: getCalculatedCloudlet for smart thing %d%n", TAG, smartThingKey.getMyId());
-		System.out.printf("%s: cloudlet result %d%n", TAG, calculatedCloudletsToSmartThings.get(smartThingKey).getMyId());
+		OptLogger.debug(TAG, "getCalculatedCloudlet");
 		
 		return calculatedCloudletsToSmartThings.get(smartThingKey).getMyId();
 	}
@@ -96,7 +95,7 @@ public final class DeviceFacade {
 	 * @return a merged list of cloudlets available for all devices in the hashmap
 	 */
 	private List<FogDevice> mergeAvailableCloudlets(){
-		System.out.printf("%s: mergeAvailableCloudlets%n", TAG);
+		OptLogger.debug(TAG, "mergeAvailableCloudlets");
 		HashSet<FogDevice> totalCloudlets = new HashSet<>();
 		
 		for (MobileDevice md : devicesWaitList.keySet()) {
@@ -115,7 +114,7 @@ public final class DeviceFacade {
 	 * for 'calculated cloudlet' attribute 
 	 */
 	private void resetCalculatedCloudlets() {
-		System.out.printf("%s: resetCalculatedCloudlets%n", TAG);
+		OptLogger.debug(TAG, "resetCalculatedCloudlets");
 		if (calculatedCloudletsToSmartThings.size() > 0) {
 			for (MobileDevice st : calculatedCloudletsToSmartThings.keySet()) {
 				st.setCloudletCalculated(false);
@@ -124,10 +123,10 @@ public final class DeviceFacade {
 	}
 	
 	public void addSmartThingInWaitList(MobileDevice st, List<FogDevice> cloudlets) {
-		System.out.printf("%s: addSmartThingInWaitList%n", TAG);
+		OptLogger.debug(TAG, "addSmartThingInWaitList");
 		
 		if (simClock.isCalculationReleased()) {
-			System.out.printf("%s: calc released%n", TAG);
+			OptLogger.debug(TAG, "calc released");
 			
 			List<FogDevice> allAvailableCloudlets = mergeAvailableCloudlets();
 			List<MobileDevice> reqSmartThings = new ArrayList<> (devicesWaitList.keySet());
@@ -143,14 +142,14 @@ public final class DeviceFacade {
 			
 			for (MobileDevice reqSmartThing : reqSmartThings) {
 				reqSmartThing.setCloudletCalculated(true);
-				System.out.printf("%s: cloudlet calculated for smart thing %d%n", TAG, reqSmartThing.getMyId());
 			}
 		} else {
 			if (!devicesWaitList.containsKey(st)) {
 				devicesWaitList.put(st, cloudlets);
-				System.out.printf("%s: added to the list - size: %d %n", TAG, devicesWaitList.size());
+				OptLogger.debug(TAG, "added to the list - size:" + devicesWaitList.size());
 			} else {
-				System.out.printf("%s: smartThing %d is already on the list waiting for migration%n", TAG, st.getMyId());
+				OptLogger.debug(TAG, "smartThing " + st.getMyId() 
+					+ " is already on the list waiting for migration" + devicesWaitList.size());
 			}			
 		}
 	}

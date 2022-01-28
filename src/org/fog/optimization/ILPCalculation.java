@@ -7,6 +7,7 @@ import org.cloudbus.cloudsim.NetworkTopology;
 import org.fog.entities.FogDevice;
 import org.fog.entities.MobileDevice;
 import org.fog.optimization.facade.DeviceFacade;
+import org.fog.optimization.facade.OptLogger;
 import org.fog.vmmobile.AppExample;
 
 import gurobi.GRB;
@@ -30,7 +31,6 @@ public class ILPCalculation {
     private int ilpMode = 1; // 1 for pli-1 and 2 for pli-2
 	
 	public ILPCalculation(List<MobileDevice> smartThings, List<FogDevice> availableCloudlets, int ilpMode) {
-		System.out.printf("%s: ILPCalculation%n", TAG);
 		this.smartThings = smartThings;
 		this.availableCloudlets = availableCloudlets;
 		this.dfInstance = DeviceFacade.getInstance();
@@ -41,19 +41,17 @@ public class ILPCalculation {
 	}
 
 	private void createModelAndEnv(){
-		System.out.printf("%s: createModelAndEnv%n", TAG);
 		try {
 			env = new GRBEnv();
 			model = new GRBModel(env);
 			model.set(GRB.StringAttr.ModelName, MODEL_NAME);
 		} catch (GRBException e) {
-			System.out.printf("%s: createModel exception: %s%n", TAG, e.getMessage());
+			OptLogger.error(TAG, e.getMessage());
 			e.printStackTrace();
 		}
 	}
 	
 	private void createDecisionVariables() {
-		System.out.printf("%s: createDecisionVariables%n", TAG);
 		allocate = new GRBVar[availableCloudlets.size()][smartThings.size()];
 		for (int cl = 0; cl < availableCloudlets.size(); cl++) {
 			for (int st = 0; st < smartThings.size(); st++) {
@@ -61,7 +59,7 @@ public class ILPCalculation {
 					allocate[cl][st] = model.addVar(0, 1, 1, GRB.BINARY, "allocate[" 
 							+ availableCloudlets.get(cl).getMyId() + "][" + smartThings.get(st).getMyId() + "]");
 				} catch (GRBException e) {
-					System.out.printf("%s: createDecisionVariables exception: %s%n", TAG, e.getMessage());
+					OptLogger.error(TAG, e.getMessage());
 					e.printStackTrace();
 				}
 			}
@@ -73,7 +71,6 @@ public class ILPCalculation {
 	}
 	
 	private void defineObjectiveFunction() {
-		System.out.printf("%s: defineObjectiveFunction%n", TAG);
 		GRBLinExpr obj = new GRBLinExpr();
 		
 		if (ilpMode == 1) {
@@ -95,13 +92,12 @@ public class ILPCalculation {
 		try {
 			model.setObjective(obj, GRB.MINIMIZE);
 		} catch (GRBException e) {
-			System.out.printf("%s: defineObjectiveFunction exception: %s%n", TAG, e.getMessage());
+			OptLogger.error(TAG, e.getMessage());
 			e.printStackTrace();
 		}
 	}
 	
 	private void storageConstr() {
-		System.out.printf("%s: storageConstr%n", TAG);
 		for (int cl = 0; cl < availableCloudlets.size(); cl++) {
 			GRBLinExpr leftStorageConstr = new GRBLinExpr();
 			for (int st = 0; st < smartThings.size(); st++) {
@@ -113,14 +109,13 @@ public class ILPCalculation {
 			try {
 				model.addConstr(leftStorageConstr, GRB.LESS_EQUAL, clStorage, "storage[" + availableCloudlets.get(cl).getMyId() + "]");
 			} catch (GRBException e) {
-				System.out.printf("%s: createConstraints exception: %s%n", TAG, e.getMessage());
+				OptLogger.error(TAG, e.getMessage());
 				e.printStackTrace();
 			}
 		}
 	}
 	
 	private void CPUConstr() {
-		System.out.printf("%s: CPUConstr%n", TAG);
 		for (int cl = 0; cl < availableCloudlets.size(); cl++) {
 			GRBLinExpr leftCPUConstr = new GRBLinExpr();
 			for (int st = 0; st < smartThings.size(); st++) {
@@ -132,14 +127,13 @@ public class ILPCalculation {
 			try {
 				model.addConstr(leftCPUConstr, GRB.LESS_EQUAL, clCPU, "cpu[" + availableCloudlets.get(cl).getMyId() + "]");
 			} catch (GRBException e) {
-				System.out.printf("%s: createConstraints exception: %s%n", TAG, e.getMessage());
+				OptLogger.error(TAG, e.getMessage());
 				e.printStackTrace();
 			}
 		}
 	}
 	
 	private void RAMConstr() {
-		System.out.printf("%s: RAMConstr%n", TAG);
 		for (int cl = 0; cl < availableCloudlets.size(); cl++) {
 			GRBLinExpr leftRAMConstr = new GRBLinExpr();
 			for (int st = 0; st < smartThings.size(); st++) {
@@ -151,14 +145,13 @@ public class ILPCalculation {
 			try {
 				model.addConstr(leftRAMConstr, GRB.LESS_EQUAL, clRAM, "ram[" + availableCloudlets.get(cl).getMyId() + "]");
 			} catch (GRBException e) {
-				System.out.printf("%s: createConstraints exception: %s%n", TAG, e.getMessage());
+				OptLogger.error(TAG, e.getMessage());
 				e.printStackTrace();
 			}
 		}
 	}
 	
 	private void limitCloudletsConstr() {
-		System.out.printf("%s: limitCloudletsConstr%n", TAG);
 		for (int st = 0; st < smartThings.size(); st++) {
 			GRBLinExpr limitCloudletConstr = new GRBLinExpr();
 			for (int cl = 0; cl < availableCloudlets.size(); cl++) {
@@ -168,23 +161,22 @@ public class ILPCalculation {
 			try {
 				model.addConstr(limitCloudletConstr, GRB.EQUAL, 1, "smartThing[" + smartThings.get(st).getMyId() + "]");
 			} catch (GRBException e) {
-				System.out.printf("%s: createConstraints exception: %s%n", TAG, e.getMessage());
+				OptLogger.error(TAG, e.getMessage());
 				e.printStackTrace();
 			}
 		}	
 	}
 	
 	private void printResult() {
-		System.out.printf("%s: printResult%n", TAG);
 		for (int cl = 0; cl < availableCloudlets.size(); cl++) {
 			for (int st = 0; st < smartThings.size(); st++) {
 				try {
 					if (allocate[cl][st].get(GRB.DoubleAttr.X) > 0) {
-						System.out.println("" + allocate[cl][st].get(GRB.StringAttr.VarName)
+						OptLogger.debug(TAG, "" + allocate[cl][st].get(GRB.StringAttr.VarName)
 								+ ": " + allocate[cl][st].get(GRB.DoubleAttr.X));
 					}
 				} catch (GRBException e) {
-					System.out.printf("%s: printResult exception: %s%n", TAG, e.getMessage());
+					OptLogger.error(TAG, e.getMessage());
 					e.printStackTrace();
 				}
 			}
@@ -192,9 +184,7 @@ public class ILPCalculation {
 
 	}
 	
-	private HashMap<MobileDevice, FogDevice> getResult() {
-		System.out.printf("%s: printResult%n", TAG);
-		
+	private HashMap<MobileDevice, FogDevice> getResult() {		
 		HashMap<MobileDevice, FogDevice> ILPResult = new HashMap<>();
 		
 		for (int cl = 0; cl < availableCloudlets.size(); cl++) {
@@ -204,7 +194,7 @@ public class ILPCalculation {
 						ILPResult.put(smartThings.get(st), availableCloudlets.get(cl));
 					}
 				} catch (GRBException e) {
-					System.out.printf("%s: getResult exception: %s%n", TAG, e.getMessage());
+					OptLogger.error(TAG, e.getMessage());
 					e.printStackTrace();
 				}
 			}
@@ -214,7 +204,6 @@ public class ILPCalculation {
 	}
 	
 	private void createConstraints() {
-		System.out.printf("%s: createConstraints%n", TAG);
 		storageConstr();
 		CPUConstr();
 		RAMConstr();
@@ -222,7 +211,6 @@ public class ILPCalculation {
 	}
 	
 	public HashMap<MobileDevice, FogDevice> solveILP() {
-		System.out.printf("%s: solveILP%n", TAG);
 		createDecisionVariables();
 		defineObjectiveFunction();
 		createConstraints();
@@ -231,7 +219,7 @@ public class ILPCalculation {
 			model.write("teste_pli.lp");
 			model.optimize();
 		} catch (GRBException e) {
-			System.out.printf("%s: solveILP exception: %s%n", TAG, e.getMessage());
+			OptLogger.error(TAG, e.getMessage());
 			e.printStackTrace();
 		}
 		
