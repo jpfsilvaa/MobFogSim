@@ -5,9 +5,6 @@ import java.util.List;
 
 import org.fog.entities.FogDevice;
 import org.fog.entities.MobileDevice;
-import org.fog.optimization.facade.OptLogger;
-
-import gurobi.GRBException;
 
 public class Allocation {
 	

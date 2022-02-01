@@ -49,7 +49,7 @@ import org.fog.entities.MobileSensor;
 import org.fog.entities.Tuple;
 import org.fog.localization.Coordinate;
 import org.fog.localization.Distances;
-import org.fog.optimization.facade.SimulationClockFacade;
+import org.fog.optimization.facade.SimClockFacade;
 import org.fog.placement.MobileController;
 import org.fog.placement.ModuleMapping;
 import org.fog.policy.AppModuleAllocationPolicy;
@@ -107,7 +107,7 @@ public class AppExample {
 	static final int numOfMobilesPerDept = 4;
 	static final double EEG_TRANSMISSION_TIME = 10;
 	
-	private static String TAG = "-------JOAO " + AppExample.class.getName();
+	private static String TAG = AppExample.class.getName();
 
 	/**
 	 * @param args
@@ -507,7 +507,7 @@ public class AppExample {
 		System.setOut(new PrintStream("out.txt"));
 		System.out.println("Inicio: " + Calendar.getInstance().getTime());
 		CloudSim.startSimulation();
-		SimulationClockFacade.getInstance().setLastCalculationTime(CloudSim.clock());
+		SimClockFacade.getInstance().setLastCalculationTime(CloudSim.clock());
 		System.out.println("Simulation over");
 		CloudSim.stopSimulation();
 	}

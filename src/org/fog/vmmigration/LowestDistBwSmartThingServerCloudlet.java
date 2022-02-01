@@ -7,8 +7,8 @@ import org.fog.entities.ApDevice;
 import org.fog.entities.FogDevice;
 import org.fog.entities.MobileDevice;
 import org.fog.localization.DiscoverLocalization;
+import org.fog.optimization.OptLogger;
 import org.fog.optimization.facade.DeviceFacade;
-import org.fog.optimization.facade.OptLogger;
 
 public class LowestDistBwSmartThingServerCloudlet implements DecisionMigration {
 
@@ -38,6 +38,7 @@ public class LowestDistBwSmartThingServerCloudlet implements DecisionMigration {
 		OptLogger.debug(TAG, "shouldMigrate");
 
 		if (smartThing.getSpeed() == 0) {// smartThing is mobile
+			OptLogger.debug(TAG, "shouldMigrate - user static");
 			return false;// no migration
 		}
 

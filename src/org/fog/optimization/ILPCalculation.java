@@ -7,7 +7,6 @@ import org.cloudbus.cloudsim.NetworkTopology;
 import org.fog.entities.FogDevice;
 import org.fog.entities.MobileDevice;
 import org.fog.optimization.facade.DeviceFacade;
-import org.fog.optimization.facade.OptLogger;
 import org.fog.vmmobile.AppExample;
 
 import gurobi.GRB;
@@ -19,7 +18,7 @@ import gurobi.GRBVar;
 
 public class ILPCalculation {
 	
-	private static String TAG = "-------JOAO " + ILPCalculation.class.getName();
+	private static String TAG = ILPCalculation.class.getName();
 	
 	private final String MODEL_NAME = "Cloudlet-SmartThing_Allocation";
 	private List<MobileDevice> smartThings;

@@ -38,7 +38,7 @@ import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.localization.Coordinate;// myiFogSim
 import org.fog.localization.Distances;
-import org.fog.optimization.facade.OptLogger;
+import org.fog.optimization.OptLogger;
 import org.fog.placement.MobileController;
 import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.scheduler.StreamOperatorScheduler;
