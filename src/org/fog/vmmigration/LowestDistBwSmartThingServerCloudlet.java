@@ -38,7 +38,6 @@ public class LowestDistBwSmartThingServerCloudlet implements DecisionMigration {
 		OptLogger.debug(TAG, "shouldMigrate");
 
 		if (smartThing.getSpeed() == 0) {// smartThing is mobile
-			OptLogger.debug(TAG, "shouldMigrate - user static");
 			return false;// no migration
 		}
 
@@ -55,7 +54,6 @@ public class LowestDistBwSmartThingServerCloudlet implements DecisionMigration {
 			if (!smartThing.isCloudletCalculated()) {
 				OptLogger.debug(TAG, "shouldMigrate - smartThing.isCloudletCalculated() = false / SmartThing id: "
 							+ smartThing.getMyId());
-				DeviceFacade.getInstance().addSmartThingInWaitList(smartThing, serverCloudlets);
 				return false;
 			} else {
 				OptLogger.debug(TAG, "shouldMigrate - smartThing.isCloudletCalculated() = true / SmartThing id: "

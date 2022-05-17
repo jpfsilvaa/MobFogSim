@@ -49,6 +49,7 @@ import org.fog.entities.MobileSensor;
 import org.fog.entities.Tuple;
 import org.fog.localization.Coordinate;
 import org.fog.localization.Distances;
+import org.fog.optimization.OptLogger;
 import org.fog.optimization.facade.SimClockFacade;
 import org.fog.placement.MobileController;
 import org.fog.placement.ModuleMapping;
@@ -427,6 +428,7 @@ public class AppExample {
 						"FIXED_MIGRATION_POINT_with_LOWEST_DIST_BW_SMARTTING_AP");
 
 				} else if (getMigStrategyPolicy() == Policies.LOWEST_DIST_BW_SMARTTING_SERVERCLOUDLET) {
+					OptLogger.error(TAG, "st-id: " + st.getMyId() + " seed: " + getSeed());
 					MyStatistics.getInstance().setFileMap("./outputLatencies/"+ st.getMyId()
 						+ "/latencies_FIXED_MIGRATION_POINT_with_LOWEST_DIST_BW_SMARTTING_SERVERCLOUDLET_seed_"
 						+ getSeed() + "_st_" + st.getMyId() + ".txt", st.getMyId());
@@ -527,19 +529,22 @@ public class AppExample {
 	private static int[] readDevicePathOrder(File filename) {
 
 		String line = "";
-		String cvsSplitBy = "\t";
+		String csvSplitBy = "\t";
 
 		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
 
-			int i = 1;
-			while (((line = br.readLine()) != null)) {
-				if (i == 1) {
-					break;
+			int i = 0;
+			for (String lineR = br.readLine(); lineR != null; lineR = br.readLine()) {
+				if (i == 0) {
+					line = lineR;
+				} else {
+					line = line.concat(csvSplitBy + lineR);
 				}
 				i++;
 			}
+
 			// use comma as separator
-			String[] position = line.split(cvsSplitBy);
+			String[] position = line.split(csvSplitBy);
 			int order[] = new int[getSmartThings().size()];
 			for (int j = 0; j < getSmartThings().size(); j++) {
 				order[j] = Integer.valueOf(position[j]);
@@ -921,9 +926,9 @@ public class AppExample {
 				peList.add(new Pe(0, new PeProvisionerOverbooking(mips)));
 
 				int hostId = FogUtils.generateEntityId();
-				long storage = 16 * 1024 * 1024;// host storage
+				long storage = 60 * 1024 * 1024;// host storage
 				int bw = 1000 * 1024 * 1024;
-				int ram = 1024;// host memory (MB)
+				int ram = 4 * 1024;// host memory (MB)
 				// To the hardware's characteristics (MobileDevice) - to CloudSim
 				PowerHost host = new PowerHost(hostId, new RamProvisionerSimple(ram),
 					new BwProvisionerOverbooking(bw), storage, peList,

@@ -20,7 +20,6 @@ import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.core.predicates.Predicate;
 import org.cloudbus.cloudsim.core.predicates.PredicateAny;
 import org.cloudbus.cloudsim.core.predicates.PredicateNone;
-import org.fog.optimization.facade.SimClockFacade;
 
 /**
  * This class extends the CloudSimCore to enable network simulation in CloudSim.
@@ -911,9 +910,6 @@ public class CloudSim {
 		default:
 			break;
 		}
-		
-		SimClockFacade.getInstance().checkClock();
-		
 	}
 
 	/**

@@ -1,29 +1,12 @@
 package org.fog.optimization.facade;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 
-import org.cloudbus.cloudsim.Host;
-import org.cloudbus.cloudsim.Pe;
-import org.cloudbus.cloudsim.Storage;
-import org.cloudbus.cloudsim.core.CloudSim;
-import org.cloudbus.cloudsim.power.PowerHost;
-import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
-import org.cloudbus.cloudsim.sdn.overbooking.BwProvisionerOverbooking;
-import org.cloudbus.cloudsim.sdn.overbooking.PeProvisionerOverbooking;
 import org.fog.entities.FogDevice;
-import org.fog.entities.FogDeviceCharacteristics;
 import org.fog.entities.MobileDevice;
-import org.fog.optimization.Allocation;
+import org.fog.optimization.ILPCalculation;
 import org.fog.optimization.OptLogger;
-import org.fog.policy.AppModuleAllocationPolicy;
-import org.fog.scheduler.StreamOperatorScheduler;
-import org.fog.utils.FogLinearPowerModel;
-import org.fog.utils.FogUtils;
-import org.fog.vmmigration.Migration;
+import org.fog.vmmobile.AppExample;
 
 /**
  * 
@@ -36,21 +19,20 @@ import org.fog.vmmigration.Migration;
 public final class DeviceFacade {
 	
 	private static String TAG = DeviceFacade.class.getName();
-	private static DeviceFacade instance;
+	private static DeviceFacade INSTANCE;
 
-	public final HashMap<MobileDevice, List<FogDevice>> devicesWaitList = new HashMap<>();
 	public HashMap<MobileDevice, FogDevice> calculatedCloudletsToSmartThings = new HashMap<>();
-	private Allocation allocator = new Allocation();
 	private int ilpMode = 1;
+//	private Process pythonProcess;
 	
 	private DeviceFacade() {}
 	
 	public static synchronized DeviceFacade getInstance() {
-		if (instance == null) {
-			instance = new DeviceFacade();
+		if (INSTANCE == null) {
+			INSTANCE = new DeviceFacade();
 		}
 		
-		return instance;
+		return INSTANCE;
 	}
 	
 	public long getStorage(FogDevice device) {
@@ -87,26 +69,6 @@ public final class DeviceFacade {
 	}
 	
 	/**
-	 * @author jps
-	 * 
-	 * @param devices waiting to be allocated
-	 * @return a merged list of cloudlets available for all devices in the hashmap
-	 */
-	private List<FogDevice> mergeAvailableCloudlets(){
-		OptLogger.debug(TAG, "mergeAvailableCloudlets");
-		HashSet<FogDevice> totalCloudlets = new HashSet<>();
-		
-		for (MobileDevice md : devicesWaitList.keySet()) {
-			// it could happens if: the smartThis was disconnected (by distance, migration, or event)
-			if (md.getSourceServerCloudlet() != null) {
-				totalCloudlets.addAll(Migration.serverClouletsAvailableList(devicesWaitList.get(md), md));
-			}
-		}
-		
-		return new ArrayList<FogDevice>(totalCloudlets);
-	}
-	
-	/**
 	 * Reset all the smartThings calculated that did not call for migration again,
 	 * and then it did not uses the cloudlet result e must not stay as 'true' 
 	 * for 'calculated cloudlet' attribute 
@@ -117,38 +79,40 @@ public final class DeviceFacade {
 			for (MobileDevice st : calculatedCloudletsToSmartThings.keySet()) {
 				st.setCloudletCalculated(false);
 			}
+			calculatedCloudletsToSmartThings.clear();
 		}
 	}
 	
-	public void addSmartThingInWaitList(MobileDevice st, List<FogDevice> cloudlets) {
-		OptLogger.debug(TAG, "addSmartThingInWaitList");
-		
-		if (!devicesWaitList.containsKey(st)) {
-			devicesWaitList.put(st, cloudlets);
-			OptLogger.debug(TAG, "added to the list - size:" + devicesWaitList.size());
-		} else {
-			OptLogger.debug(TAG, "smartThing " + st.getMyId() 
-				+ " is already on the list waiting for migration" + devicesWaitList.size());
-		}			
+	private MobileDevice getSmartThingById(int myId) {
+		for (MobileDevice user : AppExample.getSmartThings()) {
+			if (user.getMyId() == myId) {
+				return user;
+			}
+		}
+		return null;
+	}
+	
+	private FogDevice getCloudletById(int myId) {
+		for (FogDevice cloudlet : AppExample.getServerCloudlets()) {
+			if (cloudlet.getMyId() == myId) {
+				return cloudlet;
+			}
+		}
+		return null;
 	}
 	
 	public void calculate() {
 		OptLogger.debug(TAG, "calculate");
-		
-		List<FogDevice> allAvailableCloudlets = mergeAvailableCloudlets();
-		List<MobileDevice> reqSmartThings = new ArrayList<> (devicesWaitList.keySet());
-		
-		if (!allAvailableCloudlets.isEmpty()) {
-			ilpMode = 1;
-			resetCalculatedCloudlets();
-			calculatedCloudletsToSmartThings = allocator.calculateAllocations(allAvailableCloudlets, reqSmartThings, ilpMode);
-			DeviceFacade.getInstance().devicesWaitList.clear();
-		} else {
-			OptLogger.debug(TAG, "No users to calculate");
-		}
-		
-		for (MobileDevice reqSmartThing : reqSmartThings) {
-			reqSmartThing.setCloudletCalculated(true);
+
+		resetCalculatedCloudlets();
+			
+		ILPCalculation calc = new ILPCalculation(
+				AppExample.getSmartThings(), AppExample.getServerCloudlets(), ilpMode);
+		calculatedCloudletsToSmartThings = calc.solveILP();
+		calc = null;
+
+		for (MobileDevice st : calculatedCloudletsToSmartThings.keySet()) {
+			st.setCloudletCalculated(true);
 		}
 	}
 	

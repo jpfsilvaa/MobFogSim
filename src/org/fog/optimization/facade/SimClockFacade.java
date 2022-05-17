@@ -9,7 +9,7 @@ public final class SimClockFacade {
 	private static SimClockFacade instance;
 	
 	private double lastCalculationTime;
-	private int interval = 2 * 1000;
+	private int interval = 120 * 1000;
 	private DeviceFacade dfInstance;
 	
 	private SimClockFacade() {
@@ -25,8 +25,8 @@ public final class SimClockFacade {
 	}
 	
 	public boolean isIntervalReached() {
-		OptLogger.debug(TAG, "isIntervalReached");
-		OptLogger.debug(TAG, "current clock -> " + CloudSim.clock() + "// lastCalculationTime -> " + lastCalculationTime);
+//		OptLogger.debug(TAG, "isIntervalReached");
+//		OptLogger.debug(TAG, "current clock -> " + CloudSim.clock() + "// lastCalculationTime -> " + lastCalculationTime);
 		if (CloudSim.clock() >= lastCalculationTime 
 				+ interval) {
 			return true;
@@ -45,13 +45,13 @@ public final class SimClockFacade {
 	}
 	
 	private void callCalculation() {
-		OptLogger.debug(TAG, "callCalculation");
+//		OptLogger.debug(TAG, "callCalculation");
 		
 		dfInstance.calculate();
 	}
 	
 	public void checkClock() {
-		OptLogger.debug(TAG, "checkClock");
+//		OptLogger.debug(TAG, "checkClock");
 		
 		if (isIntervalReached()) {
 			callCalculation();

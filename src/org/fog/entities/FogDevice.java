@@ -998,7 +998,6 @@ public class FogDevice extends PowerDatacenter {
 	}
 
 	private void invokeDecisionMigration(SimEvent ev) {
-		OptLogger.debug(TAG, "invokeDecisionMigration");
 		for (MobileDevice st : getSmartThings()) {
 			//Only the connected smartThings
 			if (st.getSourceAp() != null && (!st.isLockedToMigration())) {

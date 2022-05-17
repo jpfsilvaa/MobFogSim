@@ -35,6 +35,7 @@ import org.fog.entities.MobileSensor;
 import org.fog.entities.Sensor;
 import org.fog.localization.Coordinate;
 import org.fog.localization.Distances;
+import org.fog.optimization.facade.SimClockFacade;
 import org.fog.utils.Config;
 import org.fog.utils.FogEvents;
 import org.fog.utils.FogUtils;
@@ -311,8 +312,9 @@ public class MobileController extends SimEntity {
 			createNewSmartThing(ev);
 			break;
 		case MobileEvents.CHECK_NEW_STEP:
+			SimClockFacade.getInstance().checkClock();
 			checkNewStep();
-			System.out.println("SmartThingListSize: " + getSmartThings().size());
+			System.out.println(CloudSim.clock() + "SmartThingListSize: " + getSmartThings().size());
 			if (getSmartThings().isEmpty())
 				sendNow(getId(), MobileEvents.STOP_SIMULATION);
 			break;
