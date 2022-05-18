@@ -52,9 +52,9 @@ public class FogLinearPowerModel implements PowerModel {
 	@Override
 	public double getPower(double utilization) throws IllegalArgumentException {
 
-		if (utilization < 0 || utilization > 1) {
-			throw new IllegalArgumentException("Utilization value must be between 0 and 1");
-		}
+//		if (utilization < 0 || utilization > 1) {
+//			throw new IllegalArgumentException("Utilization value must be between 0 and 1");
+//		}
 		return getStaticPower() + getConstant() * utilization * 100;
 	}
 
