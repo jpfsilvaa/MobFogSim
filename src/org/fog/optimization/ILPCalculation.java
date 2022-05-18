@@ -35,8 +35,6 @@ public class ILPCalculation {
 		this.dfInstance = DeviceFacade.getInstance();
 		this.ilpMode = ilpMode;
 		createModelAndEnv();
-		
-		availableCloudlets.add(0, AppExample.getServerCloudlets().get(0));
 	}
 
 	private void createModelAndEnv(){
@@ -199,6 +197,14 @@ public class ILPCalculation {
 			}
 		}
 		
+		model.dispose();
+	    try {
+			env.dispose();
+		} catch (GRBException e) {
+			OptLogger.error(TAG, e.getMessage());
+			e.printStackTrace();
+		}
+		
 		return ILPResult;
 	}
 	
@@ -208,14 +214,13 @@ public class ILPCalculation {
 		RAMConstr();
 		limitCloudletsConstr();
 	}
-	
+
 	public HashMap<MobileDevice, FogDevice> solveILP() {
 		createDecisionVariables();
 		defineObjectiveFunction();
 		createConstraints();
 		
 		try {
-			model.write("teste_pli.lp");
 			model.optimize();
 		} catch (GRBException e) {
 			OptLogger.error(TAG, e.getMessage());
