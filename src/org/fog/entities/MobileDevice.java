@@ -61,6 +61,13 @@ public class MobileDevice extends FogDevice {
 	private boolean status;
 	private boolean migStatusLive;
 	protected VmMigrationTechnique migrationTechnique;
+	
+	// auction attributes
+	private float bid = 0;
+	private float monetaryFactor = 0;
+	private float migCost = 0;
+	private float maxLatency = 0;
+	private float priceToPay = 0;
 
 	@Override
 	public int hashCode() {
@@ -406,6 +413,46 @@ public class MobileDevice extends FogDevice {
 			+ " instances of module " + config.getModule().getName());
 	}
 
+	public float getBid() {
+		return bid;
+	}
+
+	public void setBid(float bid) {
+		this.bid = bid;
+	}
+
+	public float getMonetaryFactor() {
+		return monetaryFactor;
+	}
+
+	public void setMonetaryFactor(float cost) {
+		this.monetaryFactor = cost;
+	}
+
+	public float getMigCost() {
+		return migCost;
+	}
+
+	public void setMigCost(float migCost) {
+		this.migCost = migCost;
+	}
+
+	public float getMaxLatency() {
+		return maxLatency;
+	}
+
+	public void setMaxLatency(float maxLatency) {
+		this.maxLatency = maxLatency;
+	}
+	
+	public float getPriceToPay() {
+		return priceToPay;
+	}
+
+	public void setPriceToPay(float priceToPay) {
+		this.priceToPay = priceToPay;
+	}
+	
 	private void manageResources(SimEvent ev) {
 		send(getId(), Config.RESOURCE_MGMT_INTERVAL, FogEvents.RESOURCE_MGMT);
 	}
