@@ -19,4 +19,11 @@ public class LatencyByDistance {
 		double latency2 = distance * 0.001; 
 		return latency1 + latency2;
 	}
+	
+	public static double cloudletsLatencyConnection(FogDevice src, FogDevice dst) {
+		double distance = Distances.checkDistance(src.getCoord(), dst.getCoord());
+		double latency1 = latencyConnection(src, dst);// bw source and vmLocal
+		double latency2 = distance * 0.001; 
+		return latency1 + latency2;
+	}
 }

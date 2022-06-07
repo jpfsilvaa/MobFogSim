@@ -5,6 +5,7 @@ import java.util.HashMap;
 import org.fog.entities.FogDevice;
 import org.fog.entities.MobileDevice;
 import org.fog.optimization.ILPCalculation;
+import org.fog.optimization.ILPCalculationVCG;
 import org.fog.optimization.OptLogger;
 import org.fog.vmmobile.AppExample;
 
@@ -106,8 +107,8 @@ public final class DeviceFacade {
 
 		resetCalculatedCloudlets();
 			
-		ILPCalculation calc = new ILPCalculation(
-				AppExample.getSmartThings(), AppExample.getServerCloudlets(), ilpMode);
+		ILPCalculationVCG calc = new ILPCalculationVCG(
+				AppExample.getSmartThings(), AppExample.getServerCloudlets());
 		calculatedCloudletsToSmartThings = calc.solveILP();
 		calc = null;
 

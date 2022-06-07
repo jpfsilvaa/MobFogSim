@@ -7,6 +7,7 @@ import org.cloudbus.cloudsim.NetworkTopology;
 import org.fog.entities.FogDevice;
 import org.fog.entities.MobileDevice;
 import org.fog.optimization.facade.DeviceFacade;
+import org.fog.vmmigration.LatencyByDistance;
 import org.fog.vmmobile.AppExample;
 
 import gurobi.GRB;
@@ -55,6 +56,7 @@ public class ILPCalculation {
 				try {
 					allocate[cl][st] = model.addVar(0, 1, 1, GRB.BINARY, "allocate[" 
 							+ availableCloudlets.get(cl).getMyId() + "][" + smartThings.get(st).getMyId() + "]");
+
 				} catch (GRBException e) {
 					OptLogger.error(TAG, e.getMessage());
 					e.printStackTrace();
@@ -206,6 +208,10 @@ public class ILPCalculation {
 		}
 		
 		return ILPResult;
+	}
+	
+	public double migrationTimeFunction(double vmSize, double bandwidth) {
+		return ((double) (vmSize * 8 * 1024 * 1024) / bandwidth) * 1000.0;// normal Size
 	}
 	
 	private void createConstraints() {

@@ -24,6 +24,7 @@ import org.fog.utils.Logger;
 import org.fog.utils.ModuleLaunchConfig;
 import org.fog.vmmigration.MyStatistics;
 import org.fog.vmmigration.VmMigrationTechnique;
+import org.fog.vmmobile.AppExample;
 import org.cloudbus.cloudsim.Storage;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.SimEvent;
@@ -63,11 +64,11 @@ public class MobileDevice extends FogDevice {
 	protected VmMigrationTechnique migrationTechnique;
 	
 	// auction attributes
-	private float bid = 0;
-	private float monetaryFactor = 0;
-	private float migCost = 0;
-	private float maxLatency = 0;
-	private float priceToPay = 0;
+	private float bid = 20 + AppExample.getRand().nextInt(30); // lance entre $20 e $30
+	private float monetaryFactor = 0.2f / 1000; // fator monetário de $0.20 por segundo
+	private double migCost = 0; // tempo de migração que é o tamanho da maquina * uplinkBandwidth da cloudlet alocada no momento
+	private float maxLatency = 100; // ate o momento a latencia máxima é 100ms, com base no exemplo
+	private double priceToPay = 0;
 
 	@Override
 	public int hashCode() {
@@ -429,11 +430,11 @@ public class MobileDevice extends FogDevice {
 		this.monetaryFactor = cost;
 	}
 
-	public float getMigCost() {
+	public double getMigCost() {
 		return migCost;
 	}
 
-	public void setMigCost(float migCost) {
+	public void setMigCost(double migCost) {
 		this.migCost = migCost;
 	}
 
@@ -445,11 +446,11 @@ public class MobileDevice extends FogDevice {
 		this.maxLatency = maxLatency;
 	}
 	
-	public float getPriceToPay() {
+	public double getPriceToPay() {
 		return priceToPay;
 	}
 
-	public void setPriceToPay(float priceToPay) {
+	public void setPriceToPay(double priceToPay) {
 		this.priceToPay = priceToPay;
 	}
 	

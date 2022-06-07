@@ -57,7 +57,9 @@ import org.fog.vmmigration.LiveMigration;
 import org.fog.vmmigration.LowestLatency;
 import org.fog.vmmigration.MyStatistics;
 import org.fog.vmmigration.Service;
+import org.fog.vmmobile.AppExample;
 import org.fog.vmmobile.LogMobile;
+import org.fog.vmmobile.constants.MaxAndMin;
 import org.fog.vmmobile.constants.MobileEvents;
 import org.fog.vmmobile.constants.Policies;
 
@@ -421,6 +423,10 @@ public class FogDevice extends PowerDatacenter {
 		smartThings = new HashSet<>();
 		this.coord = new Coordinate();
 		this.setCoord(0, 0);
+		Service cloudService = new Service();
+		cloudService.setType(AppExample.getRand().nextInt(10000) % MaxAndMin.MAX_SERVICES);
+		cloudService.setValue(0);
+		this.setService(cloudService);
 		
 		setCharacteristics(characteristics);
 		setVmAllocationPolicy(vmAllocationPolicy);
