@@ -89,6 +89,11 @@ public class NetworkTopology {
 
 		networkEnabled = true;
 	}
+	
+	public static double getBwBetweenCloudlets(int srcId, int dstId) {
+		
+		return bwMatrix[map.get(srcId)][map.get(dstId)];
+	}
 
 	/**
 	 * Adds a new link in the network topology

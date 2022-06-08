@@ -66,7 +66,6 @@ public class MobileDevice extends FogDevice {
 	// auction attributes
 	private float bid = 20 + AppExample.getRand().nextInt(30); // lance entre $20 e $30
 	private float monetaryFactor = 0.2f / 1000; // fator monetário de $0.20 por segundo
-	private double migCost = 0; // tempo de migração que é o tamanho da maquina * uplinkBandwidth da cloudlet alocada no momento
 	private float maxLatency = 100; // ate o momento a latencia máxima é 100ms, com base no exemplo
 	private double priceToPay = 0;
 
@@ -428,14 +427,6 @@ public class MobileDevice extends FogDevice {
 
 	public void setMonetaryFactor(float cost) {
 		this.monetaryFactor = cost;
-	}
-
-	public double getMigCost() {
-		return migCost;
-	}
-
-	public void setMigCost(double migCost) {
-		this.migCost = migCost;
 	}
 
 	public float getMaxLatency() {

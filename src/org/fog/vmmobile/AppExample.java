@@ -204,7 +204,7 @@ public class AppExample {
 		}
 		
 		createCloud(serverCloudlets, "cloud", 448000, 400000, 100, 10000, 0,
-				0.01, 16 * 103, 16 * 83.25);
+				0.01, 16 * 103, 16 * 83.25); // TODO: COLOCAR VALORES REAIS
 
 		/* It is creating Server Cloudlets. */
 		if (getPositionScPolicy() == Policies.FIXED_SC_LOCATION) {
@@ -1060,10 +1060,12 @@ public class AppExample {
 				if (coluna < 0)
 					coluna *= -1;
 				
-				// increasing delay in case of Cloud
 				double latency = (Math.max(linha, coluna))
 						* getLatencyBetweenCloudlets() + getRand().nextDouble();
+				
+				// increasing delay in case of Cloud
 				latency *= (sc.getName() == "cloud" || sc1.getName() == "cloud" ? 100 : 1);
+				
 				if (sc.getUplinkBandwidth() < sc1.getDownlinkBandwidth()) {
 					net.put(sc1, sc.getUplinkBandwidth());
 					NetworkTopology.addLink(sc.getId(), sc1.getId(),

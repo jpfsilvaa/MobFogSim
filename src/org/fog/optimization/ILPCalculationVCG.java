@@ -8,10 +8,8 @@ import org.fog.entities.FogDevice;
 import org.fog.entities.MobileDevice;
 import org.fog.optimization.facade.DeviceFacade;
 import org.fog.vmmigration.LatencyByDistance;
-import org.fog.vmmobile.AppExample;
 
 import gurobi.GRB;
-import gurobi.GRB.DoubleAttr;
 import gurobi.GRBEnv;
 import gurobi.GRBException;
 import gurobi.GRBLinExpr;
@@ -65,12 +63,12 @@ public final class ILPCalculationVCG {
 		}
 	}
 	
-	private void setMigCosts() {
-		OptLogger.debug(TAG, "VCG - setMigCosts");
-		for (MobileDevice user : smartThings) {
-			user.setMigCost(migrationTimeFunction(user.getVmMobileDevice().getSize()// vmSize
-				, user.getVmLocalServerCloudlet().getUplinkBandwidth()));
-		}
+	private double getMigTimeCost(MobileDevice user, FogDevice destCloudlet) {
+		OptLogger.debug(TAG, "VCG - getMigTimeCost");
+		double bandwidthSrcToDest = NetworkTopology.getBwBetweenCloudlets(
+				user.getVmLocalServerCloudlet().getId(), destCloudlet.getId());
+		OptLogger.debug(TAG, "BW-> " + bandwidthSrcToDest);
+		return migrationTimeFunction(user.getVmMobileDevice().getSize(), bandwidthSrcToDest);
 	}
 	
 	public double migrationTimeFunction(double vmSize, double bandwidth) {
@@ -83,13 +81,12 @@ public final class ILPCalculationVCG {
 		OptLogger.debug(TAG, "VCG - defineObjectiveFunction");
 		GRBLinExpr obj = new GRBLinExpr();		
 		
-		setMigCosts();
-		
 		for (int st = 0; st < smartThings.size(); st++) {
 			for (int cl = 0; cl < availableCloudlets.size(); cl++) {
 				MobileDevice user = smartThings.get(st);
-				obj.addTerm(
-						(user.getBid() - user.getMonetaryFactor() * user.getMigTime())
+				FogDevice destCloudlet = availableCloudlets.get(cl);
+				obj.addTerm((user.getBid() - user.getMonetaryFactor() 
+						* getMigTimeCost(user, destCloudlet))
 						, allocate[cl][st]);
 			}
 		}
@@ -176,8 +173,6 @@ public final class ILPCalculationVCG {
 					OptLogger.debug(TAG, "Latency between st and cl is 99 because the user is still not connected in an AP");
 				}
 				
-				OptLogger.debug(TAG, "CL->" + cl + " / latency->" + latency);
-				
 				leftLatConstr.addTerm(latency, allocate[cl][st]);
 			}
 			
@@ -256,10 +251,10 @@ public final class ILPCalculationVCG {
 		limitCloudletsConstr();
 	}
 	
-	private void pricing(double optValue) {
+	private void pricing(double optValue, HashMap<MobileDevice, FogDevice> mapResult) {
 		OptLogger.debug(TAG, "VCG - pricing");
 		for (MobileDevice user : smartThings) {
-			double socialWalfareValue = socialWelfareWithout(user, optValue);
+			double socialWalfareValue = socialWelfareWithout(user, optValue, mapResult);
 			double clarkeValue = clarkePivotRule(user);
 			user.setPriceToPay(clarkeValue - socialWalfareValue);
 			OptLogger.debug(TAG, "USER BID -> " + user.getBid() + " / USER PRICE -> " + user.getPriceToPay());
@@ -335,9 +330,11 @@ public final class ILPCalculationVCG {
 		return clarkePivotResult;
 	}
 	
-	private double socialWelfareWithout(MobileDevice v, double optValue) {
+	private double socialWelfareWithout(MobileDevice v, double optValue, 
+			HashMap<MobileDevice, FogDevice> mapResult) {
 		OptLogger.debug(TAG, "VCG - socialWelfareWithout");
-		double socialWelfare = optValue - v.getBid() - v.getMonetaryFactor() * v.getMigCost();
+		double socialWelfare = optValue - v.getBid() - v.getMonetaryFactor() 
+				* getMigTimeCost(v, mapResult.get(v));
 		return socialWelfare;
 	}
 	
@@ -355,7 +352,7 @@ public final class ILPCalculationVCG {
 			model.optimize();
 			optResult = getResult();
 			printResult();
-			pricing(model.get(GRB.DoubleAttr.ObjVal));
+			pricing(model.get(GRB.DoubleAttr.ObjVal), optResult);
 		} catch (GRBException e) {
 			OptLogger.error(TAG, e.getMessage());
 			e.printStackTrace();
