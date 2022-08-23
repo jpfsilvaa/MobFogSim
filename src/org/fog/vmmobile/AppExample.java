@@ -50,6 +50,7 @@ import org.fog.entities.Tuple;
 import org.fog.localization.Coordinate;
 import org.fog.localization.Distances;
 import org.fog.optimization.OptLogger;
+import org.fog.optimization.facade.DeviceFacade;
 import org.fog.optimization.facade.SimClockFacade;
 import org.fog.placement.MobileController;
 import org.fog.placement.ModuleMapping;
@@ -508,6 +509,7 @@ public class AppExample {
 		}
 		System.setOut(new PrintStream("out.txt"));
 		System.out.println("Inicio: " + Calendar.getInstance().getTime());
+		DeviceFacade.getInstance().bidGen(smartThings, getServerCloudlets());
 		CloudSim.startSimulation();
 		SimClockFacade.getInstance().setLastCalculationTime(CloudSim.clock());
 		System.out.println("Simulation over");

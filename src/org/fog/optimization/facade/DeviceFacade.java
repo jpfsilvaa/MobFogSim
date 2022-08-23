@@ -1,12 +1,15 @@
 package org.fog.optimization.facade;
 
 import java.util.HashMap;
+import java.util.List;
 
+import org.cloudbus.cloudsim.NetworkTopology;
 import org.fog.entities.FogDevice;
 import org.fog.entities.MobileDevice;
 import org.fog.optimization.ILPCalculation;
 import org.fog.optimization.ILPCalculationVCG;
 import org.fog.optimization.OptLogger;
+import org.fog.vmmigration.LatencyByDistance;
 import org.fog.vmmobile.AppExample;
 
 /**
@@ -20,11 +23,9 @@ import org.fog.vmmobile.AppExample;
 public final class DeviceFacade {
 	
 	private static String TAG = DeviceFacade.class.getName();
-	private static DeviceFacade INSTANCE;
+	private static DeviceFacade INSTANCE = null;
 
 	public HashMap<MobileDevice, FogDevice> calculatedCloudletsToSmartThings = new HashMap<>();
-	private int ilpMode = 1;
-//	private Process pythonProcess;
 	
 	private DeviceFacade() {}
 	
@@ -84,22 +85,26 @@ public final class DeviceFacade {
 		}
 	}
 	
-	private MobileDevice getSmartThingById(int myId) {
-		for (MobileDevice user : AppExample.getSmartThings()) {
-			if (user.getMyId() == myId) {
-				return user;
-			}
+	public void bidGen(List<MobileDevice> devices, List<FogDevice> cloudlets) {
+		OptLogger.debug(TAG, "bidGen");
+		double minLatency = LatencyByDistance.getMinimumLatency(devices, cloudlets);
+		double maxLatency = LatencyByDistance.getMaximumLatency(devices, cloudlets);
+		OptLogger.debug(TAG, "MIN LATENCY-> " + minLatency);
+		OptLogger.debug(TAG, "MAX LATENCY-> " + maxLatency);
+		
+		double minLatencyCost = minLatency * devices.get(0).getMonetaryFactor();
+		double maxLatencyCost = maxLatency * devices.get(0).getMonetaryFactor();
+		OptLogger.debug(TAG, "MIN LATENCY COST-> " + minLatencyCost);
+		OptLogger.debug(TAG, "MAX LATENCY COST-> " + maxLatencyCost);
+
+		for (MobileDevice md: devices) {
+			double newBid = Math.abs(AppExample.getRand().nextGaussian()) + minLatencyCost;
+			if (newBid > maxLatencyCost) 
+				newBid = maxLatencyCost;
+			OptLogger.debug(TAG, "BID (LATENCY)-> " + newBid);
+			md.setBid(newBid);
+			OptLogger.debug(TAG, "VCG - Bid value for the user " + md.getMyId() + ": " + md.getBid());
 		}
-		return null;
-	}
-	
-	private FogDevice getCloudletById(int myId) {
-		for (FogDevice cloudlet : AppExample.getServerCloudlets()) {
-			if (cloudlet.getMyId() == myId) {
-				return cloudlet;
-			}
-		}
-		return null;
 	}
 	
 	public void calculate() {

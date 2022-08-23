@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 import org.fog.application.AppEdge;
@@ -64,9 +65,10 @@ public class MobileDevice extends FogDevice {
 	protected VmMigrationTechnique migrationTechnique;
 	
 	// auction attributes
-	private float bid = 20 + AppExample.getRand().nextInt(30); // lance entre $20 e $30
-	private float monetaryFactor = 0.2f / 1000; // fator monetário de $0.20 por segundo
-	private float maxLatency = 100; // ate o momento a latencia máxima é 100ms, com base no exemplo
+	private double bid = 0;
+	private HashMap<Integer, Double> relativeBidToN = new HashMap<>();
+	private float monetaryFactor = 1;
+	private float maxLatency = 100; // TODO: ate o momento a latencia máxima é 100ms, com base no exemplo
 	private double priceToPay = 0;
 
 	@Override
@@ -413,14 +415,18 @@ public class MobileDevice extends FogDevice {
 			+ " instances of module " + config.getModule().getName());
 	}
 
-	public float getBid() {
+	public double getBid() {
 		return bid;
 	}
 
-	public void setBid(float bid) {
+	public void setBid(double bid) {
 		this.bid = bid;
 	}
 
+	public HashMap<Integer, Double> getRelativeBid() {
+		return this.relativeBidToN;
+	}
+	
 	public float getMonetaryFactor() {
 		return monetaryFactor;
 	}

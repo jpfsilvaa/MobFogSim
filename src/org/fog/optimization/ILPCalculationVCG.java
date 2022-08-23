@@ -2,6 +2,7 @@ package org.fog.optimization;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import org.cloudbus.cloudsim.NetworkTopology;
 import org.fog.entities.FogDevice;
@@ -63,20 +64,6 @@ public final class ILPCalculationVCG {
 		}
 	}
 	
-	private double getMigTimeCost(MobileDevice user, FogDevice destCloudlet) {
-		OptLogger.debug(TAG, "VCG - getMigTimeCost");
-		double bandwidthSrcToDest = NetworkTopology.getBwBetweenCloudlets(
-				user.getVmLocalServerCloudlet().getId(), destCloudlet.getId());
-		OptLogger.debug(TAG, "BW-> " + bandwidthSrcToDest);
-		return migrationTimeFunction(user.getVmMobileDevice().getSize(), bandwidthSrcToDest);
-	}
-	
-	public double migrationTimeFunction(double vmSize, double bandwidth) {
-		OptLogger.debug(TAG, "VCG - migrationTimeFunction");
-		// TODO: Pelo menos até o momento, o custo de migração será o seguinte cálculo
-		return ((double) (vmSize * 8 * 1024 * 1024) / bandwidth) * 1000.0;// normal Size
-	}
-	
 	private void defineObjectiveFunction() {
 		OptLogger.debug(TAG, "VCG - defineObjectiveFunction");
 		GRBLinExpr obj = new GRBLinExpr();		
@@ -84,10 +71,20 @@ public final class ILPCalculationVCG {
 		for (int st = 0; st < smartThings.size(); st++) {
 			for (int cl = 0; cl < availableCloudlets.size(); cl++) {
 				MobileDevice user = smartThings.get(st);
-				FogDevice destCloudlet = availableCloudlets.get(cl);
-				obj.addTerm((user.getBid() - user.getMonetaryFactor() 
-						* getMigTimeCost(user, destCloudlet))
-						, allocate[cl][st]);
+				FogDevice cloudlet = availableCloudlets.get(cl);
+				double latency = 99;
+				try {
+					latency = LatencyByDistance.latencyConnection(
+							cloudlet, user);
+				} catch (NullPointerException ex) { // In the case when the AP is null because the user did not connect to it yet
+					OptLogger.debug(TAG, "Latency between st and cl is 99 because the user is still not connected in an AP");
+				}
+				
+				double bidAndCost = user.getBid() - user.getMonetaryFactor() 
+						* latency;
+				
+				obj.addTerm(bidAndCost, allocate[cl][st]);
+				user.getRelativeBid().put(cloudlet.getMyId(), bidAndCost);
 			}
 		}
 		
@@ -167,8 +164,8 @@ public final class ILPCalculationVCG {
 			for (int cl = 0; cl < availableCloudlets.size(); cl++) {				
 				double latency = 99;
 				try {
-					latency = LatencyByDistance.cloudletsLatencyConnection(
-							smartThings.get(st).getVmLocalServerCloudlet(), availableCloudlets.get(cl));
+					latency = LatencyByDistance.latencyConnection(
+							availableCloudlets.get(cl), smartThings.get(st));
 				} catch (NullPointerException ex) { // In the case when the AP is null because the user did not connect to it yet
 					OptLogger.debug(TAG, "Latency between st and cl is 99 because the user is still not connected in an AP");
 				}
@@ -196,11 +193,32 @@ public final class ILPCalculationVCG {
 			}
 			
 			try {
-				model.addConstr(limitCloudletConstr, GRB.EQUAL, 1, "smartThing[" 
+				model.addConstr(limitCloudletConstr, GRB.LESS_EQUAL, 1, "smartThing[" 
 									+ smartThings.get(st).getMyId() + "]");
 			} catch (GRBException e) {
 				OptLogger.error(TAG, e.getMessage());
 				e.printStackTrace();
+			}
+		}	
+	}
+	
+	private void relativeBidConstr() {
+		OptLogger.debug(TAG, "VCG - relativeBidConstr");
+		for (int st = 0; st < smartThings.size(); st++) {
+			for (int cl = 0; cl < availableCloudlets.size(); cl++) {
+				if (smartThings.get(st).getRelativeBid().get(availableCloudlets.get(cl).getMyId()) <= 0) {
+					GRBLinExpr limitCloudletConstr = new GRBLinExpr();
+					limitCloudletConstr.addTerm(1, allocate[cl][st]);
+					
+					try {
+						model.addConstr(limitCloudletConstr, GRB.EQUAL, 0, "smartThing[" 
+											+ smartThings.get(st).getMyId() + "]_to_cloudlet[" 
+											+ availableCloudlets.get(cl).getMyId() + "]");
+					} catch (GRBException e) {
+						OptLogger.error(TAG, e.getMessage());
+						e.printStackTrace();
+					}
+				}
 			}
 		}	
 	}
@@ -217,6 +235,7 @@ public final class ILPCalculationVCG {
 				} catch (GRBException e) {
 					OptLogger.error(TAG, e.getMessage());
 					e.printStackTrace();
+					System.exit(0);
 				}
 			}
 		}
@@ -227,7 +246,7 @@ public final class ILPCalculationVCG {
 		HashMap<MobileDevice, FogDevice> ILPResult = new HashMap<>();
 		
 		for (int cl = 0; cl < availableCloudlets.size(); cl++) {
-			for (int st = 0; st < smartThings.size(); st++) {
+			for (int st = 0; st < smartThings.size(); st++) {	
 				try {
 					if (allocate[cl][st].get(GRB.DoubleAttr.X) > Math.pow(10, -6)) {
 						ILPResult.put(smartThings.get(st), availableCloudlets.get(cl));
@@ -235,6 +254,7 @@ public final class ILPCalculationVCG {
 				} catch (GRBException e) {
 					OptLogger.error(TAG, e.getMessage());
 					e.printStackTrace();
+					System.exit(0);
 				}
 			}
 		}
@@ -249,15 +269,33 @@ public final class ILPCalculationVCG {
 		RAMConstr();
 		latencyConstr();
 		limitCloudletsConstr();
+		relativeBidConstr();
+	}
+	
+	private Boolean isUserAllocated(MobileDevice user, Set<MobileDevice> allocatedUsers) {
+		Boolean result = false;
+		for (MobileDevice u : allocatedUsers) {
+			if (u.getMyId() == user.getMyId())
+				result = true;
+		}
+		
+		return result;
 	}
 	
 	private void pricing(double optValue, HashMap<MobileDevice, FogDevice> mapResult) {
 		OptLogger.debug(TAG, "VCG - pricing");
 		for (MobileDevice user : smartThings) {
-			double socialWalfareValue = socialWelfareWithout(user, optValue, mapResult);
-			double clarkeValue = clarkePivotRule(user);
-			user.setPriceToPay(clarkeValue - socialWalfareValue);
-			OptLogger.debug(TAG, "USER BID -> " + user.getBid() + " / USER PRICE -> " + user.getPriceToPay());
+			if (isUserAllocated(user, mapResult.keySet())) {
+				double socialWalfareValue = socialWelfareWithout(user, optValue, mapResult);
+				OptLogger.debug("VCG - pricing", "USER[" + user.getMyId() + "] - socialWelfareWithout->" + socialWalfareValue);
+				double clarkeValue = clarkePivotRule(user);
+				OptLogger.debug("VCG - pricing", "USER[" + user.getMyId() + "] - clarkeValue->" + clarkeValue);
+				user.setPriceToPay(clarkeValue - socialWalfareValue);
+				OptLogger.debug("VCG - pricing", "USER[" + user.getMyId() + "] BID -> " + user.getBid() + " / USER REL BID -> " 
+									+ user.getRelativeBid().get(mapResult.get(user).getMyId()) + " / USER PRICE -> " + user.getPriceToPay());
+			} else {
+				user.setPriceToPay(0);
+			}
 		}
 	}
 	
@@ -327,14 +365,15 @@ public final class ILPCalculationVCG {
 		}
 		
 		changeUBAndReaddConstr(stIdFromV);
+		OptLogger.debug(TAG, "USER - CLARKE->" + clarkePivotResult);
 		return clarkePivotResult;
 	}
 	
 	private double socialWelfareWithout(MobileDevice v, double optValue, 
 			HashMap<MobileDevice, FogDevice> mapResult) {
 		OptLogger.debug(TAG, "VCG - socialWelfareWithout");
-		double socialWelfare = optValue - v.getBid() - v.getMonetaryFactor() 
-				* getMigTimeCost(v, mapResult.get(v));
+		
+		double socialWelfare = optValue - v.getRelativeBid().get(mapResult.get(v).getMyId());
 		return socialWelfare;
 	}
 	
@@ -350,6 +389,7 @@ public final class ILPCalculationVCG {
 		HashMap<MobileDevice, FogDevice> optResult = null;
 		try {
 			model.optimize();
+			model.write("teste_lances.lp");
 			optResult = getResult();
 			printResult();
 			pricing(model.get(GRB.DoubleAttr.ObjVal), optResult);
