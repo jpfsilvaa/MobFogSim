@@ -283,7 +283,7 @@ public final class ILPCalculationVCG {
 	}
 	
 	private void pricing(double optValue, HashMap<MobileDevice, FogDevice> mapResult) {
-		OptLogger.debug(TAG, "VCG - pricing");
+		OptLogger.debug(TAG, "\nVCG - pricing");
 		for (MobileDevice user : smartThings) {
 			if (isUserAllocated(user, mapResult.keySet())) {
 				double socialWalfareValue = socialWelfareWithout(user, optValue, mapResult);

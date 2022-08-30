@@ -17,6 +17,8 @@ import org.cloudbus.cloudsim.network.GraphReaderBrite;
 import org.cloudbus.cloudsim.network.TopologicalGraph;
 import org.cloudbus.cloudsim.network.TopologicalLink;
 import org.cloudbus.cloudsim.network.TopologicalNode;
+import org.fog.optimization.ILPCalculationVCG;
+import org.fog.optimization.OptLogger;
 
 /**
  * NetworkTopology is a class that implements network layer in CloudSim. It
@@ -35,6 +37,8 @@ import org.cloudbus.cloudsim.network.TopologicalNode;
  * @since CloudSim Toolkit 1.0
  */
 public class NetworkTopology {
+	
+	private static String TAG = NetworkTopology.class.getName();
 
 	protected static int nextIdx = 0;
 
@@ -95,6 +99,30 @@ public class NetworkTopology {
 		return bwMatrix[map.get(srcId)][map.get(dstId)];
 	}
 
+	public static double getMaximumBW() {
+		double maxValue = bwMatrix[0][0];
+        for (int j = 0; j < bwMatrix.length; j++) {
+            for (int i = 0; i < bwMatrix[j].length; i++) {
+                if (bwMatrix[j][i] > maxValue) {
+                    maxValue = bwMatrix[j][i];
+                }
+            }
+        }
+        return maxValue;
+	}
+	
+	public static double getMinimumBW() {
+		double minValue = Double.MAX_VALUE;
+        for (int j = 0; j < bwMatrix.length; j++) {
+            for (int i = 0; i < bwMatrix[j].length; i++) {
+                if (bwMatrix[j][i] < minValue && bwMatrix[j][i] > 0) {
+                    minValue = bwMatrix[j][i];
+                }
+            }
+        }
+        return minValue;
+	}
+
 	/**
 	 * Adds a new link in the network topology
 	 * 
@@ -135,6 +163,8 @@ public class NetworkTopology {
 
 		// generate a new link
 		graph.addLink(new TopologicalLink(map.get(srcId), map.get(destId), (float) lat, (float) bw));
+		graph.addLink(new TopologicalLink(map.get(srcId), map.get(srcId), 0f, Float.MAX_VALUE));
+		graph.addLink(new TopologicalLink(map.get(destId), map.get(destId), 0f, Float.MAX_VALUE));
 
 		generateMatrices();
 
